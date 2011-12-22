@@ -1,0 +1,38 @@
+body
+{
+    background-color:#D9E3CB;
+    font:12px "Times New Roman";
+}
+#login{
+    float:left;
+    margin-top:10%;
+    margin-left:35%;
+    background: url(../images/sigeca_login.png) no-repeat center;
+    height:380px;
+    width:380px;
+}
+#entradas
+{
+    position:relative;
+    margin-top:46%;
+    margin-left:35%;
+}
+#msj{
+    /*display:none;*/
+    position:relative;
+    margin-top:0%;
+    float:left;
+    color:#ffd;
+    margin-left:15%;
+    display:none;
+}
+#clave
+{
+    margin-top: 10px;
+}
+#btn1
+{
+    float:right;
+    margin-top:5%;
+    margin-right:10%;
+}
