@@ -388,27 +388,13 @@ class modelo extends CI_Model
         $this->db->where('IDCALIFICACION',$idcalificacion);
         return $this->db->get('FECHACALIFICACION');
     }
-    function eliminaFechaCalificacion($ano,$idasignatura,$idcalificacion)
+    function buscaFechaCalificacion2($ano,$idasignatura)
     {
-        $this->db->where('IDCALIFICACION',$idcalificacion);
-        $this->db->delete('CALIFICACIONES');
-        
+        $this->db->select('*');
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
-        $this->db->where('IDCALIFICACION',$idcalificacion);
-        $this->db->delete('FECHACALIFICACION');
-    }
-    function guardaFechaCalificacion($ano,$idasignatura,$idcalificacion,$fecha,$ponde,$tipo)
-    {      
-        $datos = array(
-            "ANOACADEMICO"  =>  $ano,
-            "IDASIGNATURA"  =>  $idasignatura,
-            "IDCALIFICACION"=>  $idcalificacion,
-            "FECHA"         =>  $fecha,
-            "PONDERACION"   =>  $ponde,
-            "TIPOCALIFICACION" => $tipo
-        );
-        $this->db->insert('FECHACALIFICACION',$datos);
+        $this->db->order_by('FECHA');
+        return $this->db->get('FECHACALIFICACION');
     }
     function buscaDatosPROFESORCURSOASIGNATURAPorIdProfesor($idProfesor)
     {
@@ -478,6 +464,14 @@ class modelo extends CI_Model
     {
         $this->db->select('*');
         $this->db->where('IDALUMNO',$IDALUMNO);
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDASIGNATURA',$idasignatura);
+        return $this->db->get('CALIFICACIONES');
+    }
+    function buscaNota3($ano,$idasignatura,$idcalificacion)
+    {
+        $this->db->select('*');
+        $this->db->where('IDCALIFICACION',$idcalificacion);
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
         return $this->db->get('CALIFICACIONES');
@@ -575,6 +569,45 @@ class modelo extends CI_Model
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDUSUARIO',$idusuario);
         return $this->db->get('ENCARGADOUTP');
+    }
+    function guardaFechaCalificacion($ano,$idasignatura,$idcalificacion,$fecha,$ponde,$tipo)
+    {
+        $this->db->select('*');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('IDCALIFICACION',$idcalificacion);
+        $query = $this->db->get('FECHACALIFICACION');
+        if($query->num_rows()> 0) //implica que solo lo debo editar!
+        {
+            $datos = array(
+                "FECHA"         =>  $fecha,
+                "PONDERACION"   =>  $ponde,
+                "TIPOCALIFICACION" => $tipo
+            );
+            $this->db->where('ANOACADEMICO',$ano);
+            $this->db->where('IDASIGNATURA',$idasignatura);
+            $this->db->where('IDCALIFICACION',$idcalificacion);
+            $this->db->update('FECHACALIFICACION',$datos);
+        }
+        else
+        {
+            $datos = array(
+                "ANOACADEMICO"  =>  $ano,
+                "IDASIGNATURA"  =>  $idasignatura,
+                "IDCALIFICACION"=>  $idcalificacion,
+                "FECHA"         =>  $fecha,
+                "PONDERACION"   =>  $ponde,
+                "TIPOCALIFICACION" => $tipo
+            );
+            $this->db->insert('FECHACALIFICACION',$datos);
+        }
+    }
+    function eliminaConfigCalificacion($idEvaluacion,$idAsignatura,$ano)
+    {
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDASIGNATURA',$idAsignatura);
+        $this->db->where('IDCALIFICACION',$idEvaluacion);
+        $this->db->delete('FECHACALIFICACION');
     }
     
 }

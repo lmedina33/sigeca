@@ -15,7 +15,7 @@
     <?if($indice2 > 0):?>
     <?foreach($nombreCurso as $row):?>
         <tr>
-            <th><?=$row->NOMBRE.' '.$row->LETRA;?><input type="hidden" id="idCursoSeleccionado" value="<?=$row->IDCURSO;?>"></input></th>
+            <th><?=$row->NOMBRE.' '.$row->LETRA;?><input type="hidden" id="idCursoSeleccionado" value="<?=$row->IDCURSO;?>"><input type="hidden" id="ordenCurso" value="<?=$row->ORDEN;?>"/></input></th>
             <th><label>Profesor Asignado</label></th>
             <th><label>Cambiar Profesor</label></th>
             <th><label>Eliminar</label></th>
@@ -51,42 +51,9 @@
         <?endforeach;?>
     <?endfor;?>
 </table>
-<div id="configAsignatura" title="Configurar Asignatura">
-    <input type="hidden" id="idAsignatura"/>
-    <table>
-        <tr>
-            <td><label>Nombre</label></td>
-            <td>:</td>
-            <td><input id="nombreAsignatura"     class="ancho180 ui-corner-all"     disabled/></td>
-        </tr>
-        <tr>
-            <td><label>Cant. Evaluaciones</label></td>
-            <td>:</td>
-            <td><select id="cantEval"      class="ancho180 ui-corner-all"    >
-                    <option selected></option>
-                    <option>1</option>
-                    <option>2</option>
-                    <option>3</option>
-                    <option>4</option>
-                    <option>5</option>
-                    <option>6</option>
-                </select>
-        </tr>
-    </table>
-    <div id="configCalifi">
-    </div>
-    <p class="validateTips"></p>
+<div id="configAsignatura2" title="Configurar Asignatura">
 </div>
 <script>
-    //QUEDA PENDIENTE CARGAR EL "CONFIGURARASIGNATURAS" CON LA INFORMACIÓN YA EXISTENDE DE LA ASIGNATURA!!
-    function elClick(indice)
-    {
-        $("#configAsignatura").dialog("open");
-        $("#configCalifi").html('');
-        $("#nombreAsignatura").val($("#nombreasignatura"+indice).val());
-        $("#idAsignatura").val($("#idasignatura"+indice).val());
-        
-    }
     function actualizarProfesorCursoAsignatura(asignatura,idprofesor)
     {
         $.post(base_url+'sigeca/actualizaProfesorCursoAsignatura',{
@@ -107,82 +74,96 @@
             });
         });
     }
-     var nombre = $( "#nombreAsignatura" ),
-        cantEval = $("#cantEval"),
-        allFields = $( [] ).add(nombre).add(cantEval),
-        tips = $( ".validateTips" );
-        
-    $("#configAsignatura").dialog({
+    function elClick(indice2)
+    {
+        $("#configAsignatura2").dialog("open");
+        $.post(base_url+'sigeca/cargaConfigurarAsignatura',
+            {ordenCurso:$("#ordenCurso").val(),nombreAsignatura:$("#nombreasignatura"+indice2).val(),idAsignatura:$("#idasignatura"+indice2).val()},
+            function (htmlresponse,data)
+            {
+                $("#configAsignatura2").html(htmlresponse,data);
+            }
+        );
+    }
+    function updateTips( t) {
+        $( ".validateTips" )
+                .text( t )
+                .addClass( "ui-state-highlight validateTips2" )
+                .css('display','block');
+        setTimeout(function() {
+                $( ".validateTips" ).removeClass( "ui-state-highlight", 1500 );
+            }, 500 );
+    }
+    $("#configAsignatura2").dialog({
         autoOpen: false,
         height: 300,
         width: 400,
         modal: true,
+        resizable: false,
+        closeOnEscape:false,
+        open:function(event, ui) { 
+                //hide close button.
+                $(this).parent().children().children('.ui-dialog-titlebar-close').hide();
+                },
         buttons: {'Guardar':function(){
-                    var bValid = true;
-                    allFields.removeClass( "ui-state-error" );
-                    
-                    bValid = bValid && checkLength( cantEval, "Cantidad Evaluaciones", 0, 1 );
-                    if(bValid)
+                    var bValid = true,suma=0;
+                    var  valor = parseInt($('#contadorCalif').val());
+                    var cant = parseInt($("#ultimaFila").val());
+                    for (var i=0;i<valor;i++)
                     {
-                        var  valor = parseInt($('#cantidadEval').val());
-                        if($("#ponderacion").val() == 'si')
+                        if($("#fechaCalif"+i).val() != undefined)
                         {
-                            for(var i=0;i<valor;i++)
-                            {
-                                if($("#eval"+i).val() != ''  && $("#pond"+i).val() != ''){
-                                    $.post(base_url+'sigeca/guardaFechaCalificacion',{
-                                        ano:$("#seleccionAnoAcademico").val(),
-                                        idasignatura:$("#idAsignatura").val(),
-                                        idcalificacion:i+1,
-                                        fecha:$("#eval"+i).val(),
-                                        ponde:$("#pond"+i).val()
-                                    });
-                                }
-                            }
+                            var fecha = $("#fechaCalif"+i);
+                            fecha.removeClass("ui-state-error");
+                            bValid = bValid && checkLength( fecha, "Fecha", 8, 10 );
                         }
-                        else
+                        if($("#ponderacionCalif"+i).val() != undefined && $("#ponderacion").val() == 'si')
                         {
-                            for(var i=0;i<valor;i++)
+                            var ponderacion = $("#ponderacionCalif"+i);
+                            ponderacion.removeClass("ui-state-error");
+                            bValid = bValid && checkLength( ponderacion, "Ponderacion", 1, 3 );
+                        }
+                    }
+                    if($("#ponderacion").val() == 'si')
+                    {
+                        for(var i=0;i<valor;i++)
+                            if($("#ponderacionCalif"+i).val()!=undefined && $("#ponderacionCalif"+i).val()!= '' )
+                                suma = suma + parseInt($("#ponderacionCalif"+i).val());
+                        if (suma != 100){
+                            bValid = false;
+                            updateTips('La ponderación está en '+suma+'%');   
+                        }
+                    }
+                    if(bValid)
+                    {   
+                        for(var i=0;i<valor;i++)
+                        {
+                            if($("#fechaCalif"+i).val() != undefined && $("#ponderacionCalif"+i).val()!=undefined && $("#idCalif"+i).val() != undefined )
                             {
-                                if($("#eval"+i).val() != ''){
-                                    $.post(base_url+'sigeca/guardaFechaCalificacion2',{
-                                        ano:$("#seleccionAnoAcademico").val(),
-                                        idasignatura:$("#idAsignatura").val(),
-                                        idcalificacion:i+1,
-                                        fecha:$("#eval"+i).val(),
-                                        ponde:100/valor
-                                    });
-                                }
+                                var ponde =0;
+                                if($("#ponderacion").val() == 'si')
+                                    ponde = $("#ponderacionCalif"+i).val();
+                                else
+                                    ponde = 100/cant;
+                                $.post(base_url+'sigeca/guardaFechaCalificacion',{
+                                    idasignatura:$("#idAsignatura").val(),
+                                    idcalificacion:$("#idCalif"+i).val(),
+                                    fecha:$("#fechaCalif"+i).val(),
+                                    ponde:ponde,
+                                    tipo:$("#selectTipo"+i).val()
+                                });
                             }
                         }
                         $( this ).dialog( "close" );
                     }
-                },
+                }/*,
                   'Cancelar':function(){
                       $( this ).dialog( "close" );
-                  }
-        },
+                  }*/
+        }/*,
         close: function() {
-            nombre.val( "" ).removeClass( "ui-state-error" );
-            cantEval.val( "" ).removeClass( "ui-state-error" );
-            tips.val("").removeClass("validateTips2");
-            tips.css('display','none');
-            }
+            $( ".validateTips" ).val("").removeClass("validateTips2");
+            $( ".validateTips" ).css('display','none');
+        }*/
     });
-    $("#cantEval").change(
-        function ()
-        {
-            if($("#cantEval")!=''){
-            $.ajax({
-                url:base_url+'sigeca/cargaCantEvaluaciones',
-                data:{cantidad:$("#cantEval").val(),curso:$("#cursoSeleccionado").val()},
-                type:"POST",
-                cache:false,
-                success:function(htmlresponse,data){
-                    $("#configCalifi").html(htmlresponse,data);
-                }
-            });
-            }
-        }
-    );
 </script>
