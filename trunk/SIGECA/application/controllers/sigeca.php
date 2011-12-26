@@ -652,48 +652,6 @@ class sigeca extends CI_Controller {
         $idasignatura = $this->input->post('asignatura');
         $this->modelo->actualizaProfesorCursoAsignatura($ano,$idcurso,$idprofesor,$idasignatura);
     }
-    function cargaCantEvaluaciones()
-    {
-        $datos['cantidad'] = $this->input->post('cantidad');
-        $curso = $this->input->post('curso');
-        $datos['ponderacion'] = 'no';
-        $datosCurso = $this->modelo->buscaDatosCursoPorID($curso)->result();
-        foreach($datosCurso as $row):
-            if($row->ORDEN > 5) //Desde quinto en adelante!
-                $datos['ponderacion'] = 'si';
-        endforeach;
-        $this->load->view('cantidadEvaluaciones',$datos);
-    }
-    function guardaFechaCalificacion()
-    {
-        $ano = DATE('Y');
-        $idasignatura = $this->input->post('idasignatura');
-        $idcalificacion  = $this->input->post('idcalificacion');
-        $fecha = $this->convierteFecha1($this->input->post('fecha'));
-        $ponde = $this->input->post('ponde');
-        $tipo = $this->input->post('tipo');
-        
-        $cant = $this->modelo->buscaFechaCalificacion($ano,$idasignatura,$idcalificacion)->num_rows();
-        if($cant>0)
-            $this->modelo->eliminaFechaCalificacion($ano,$idasignatura,$idcalificacion);
-        else
-            $this->modelo->guardaFechaCalificacion($ano,$idasignatura,$idcalificacion,$fecha,$ponde,$tipo);   
-    }
-    function guardaFechaCalificacion2()
-    {
-        $ano = DATE('Y');
-        $idasignatura = $this->input->post('idasignatura');
-        $idcalificacion  = $this->input->post('idcalificacion');
-        $fecha = $this->convierteFecha1($this->input->post('fecha'));
-        $ponde = $this->input->post('ponde');
-        $tipo = $this->input->post('tipo');
-        
-        $cant = $this->modelo->buscaFechaCalificacion($ano,$idasignatura,$idcalificacion)->num_rows();
-        if($cant>0)
-            $this->modelo->eliminaFechaCalificacion($ano,$idasignatura,$idcalificacion);
-        else
-            $this->modelo->guardaFechaCalificacion($ano,$idasignatura,$idcalificacion,$fecha,$ponde,$tipo);   
-    }
     function cargaListadoAlumnos()
     {
         $ano =  DATE('Y');
@@ -763,5 +721,75 @@ class sigeca extends CI_Controller {
         $fecha = $this->convierteFecha1($fecha);
         
         $this->modelo->almacenarCalificaciones($idAlumno,$ano,$idAsignatura,$idCalif,$fecha,$calif,$idCurso); //FALTA EL TIPO DE CALIFICACION!!
+    }
+    function cargaConfigurarAsignatura()
+    {
+        $ordenCurso = $this->input->post('ordenCurso');
+        $nombreAsignatura = $this->input->post('nombreAsignatura');
+        $idAsignatura = $this->input->post('idAsignatura');
+        $ano = DATE('Y');
+        $fechaCalificacion = $this->modelo->buscaFechaCalificacion2($ano,$idAsignatura);
+        $datos['ponderacion'] = 'si';
+        if($ordenCurso<6) //Desde 4º básico hacia atrás!
+            $datos['ponderacion'] = 'no';
+        
+        $fecha1 = DATE('d-M-Y');
+        $fecha1 = strtotime($this->convierteFecha2($fecha1));
+        $i=0;
+        if($fechaCalificacion->num_rows()>0){     
+            $datos['evaluaciones']=$fechaCalificacion->result();
+            foreach($datos['evaluaciones'] as $row):
+                $fecha_entrada = strtotime($this->convierteFecha2($row->FECHA));
+                $calificaciones = $this->modelo->buscaNota3($ano,$idAsignatura,$row->IDCALIFICACION)->num_rows();
+                $datos['bloqueo'.$i] = 'no';
+                if($fecha1 > $fecha_entrada || $calificaciones > 0)
+                    $datos['bloqueo'.$i] = 'si';
+                $i++;
+            endforeach;
+        }
+        $mayor =0;
+        foreach($fechaCalificacion->result() as $row)
+        {
+            if(floor($row->IDCALIFICACION) > $mayor)
+            {
+                $mayor=floor($row->IDCALIFICACION);
+            }
+        }
+        $datos['indice'] = $i;
+        $datos['cantEvaluaciones'] = $mayor;
+        $datos['nombreAsignatura'] = $nombreAsignatura;
+        $datos['idAsignatura'] = $idAsignatura;
+        $datos['ultimaFila'] = $fechaCalificacion->num_rows();
+        $this->load->view('dialogConfigAsignaturas',$datos);
+    }
+    function guardaFechaCalificacion()
+    {
+        $ano = DATE('Y');
+        $idasignatura = $this->input->post('idasignatura');
+        $idcalificacion  = $this->input->post('idcalificacion');
+        $fecha = $this->input->post('fecha');
+        $ponde = $this->input->post('ponde');
+        
+        $tipo = $this->input->post('tipo');
+        if(strlen($fecha) == 9)
+            $fecha = $this->convierteFecha2 ($fecha);
+        $fecha1 = DATE('d-M-Y');
+        $fecha1 = strtotime($this->convierteFecha2($fecha1));
+        $fecha2 = $fecha;
+        $fecha = strtotime($fecha);
+        $calificaciones = $this->modelo->buscaNota3($ano,$idasignatura,$idcalificacion )->num_rows();
+        //La nueva fecha debe ser mayor 0 igual a la fecha de hoy y la evaluación no ha sido registrada! (tabla calificaciones)
+        if($fecha1<=$fecha && $calificaciones == 0)
+        {
+            $fecha = $this->convierteFecha1($fecha2);
+            $this->modelo->guardaFechaCalificacion($ano,$idasignatura,$idcalificacion,$fecha,$ponde,$tipo);   
+        }
+    }
+    function eliminaConfigCalificacion()
+    {
+        $idEvaluacion = $this->input->post('idEvaluacion');
+        $idAsignatura = $this->input->post('idAsignatura');
+        $ano = DATE('Y');
+        $this->modelo->eliminaConfigCalificacion($idEvaluacion,$idAsignatura,$ano);
     }
 }

@@ -71,6 +71,7 @@ function updateTips( t ) {
             tips.removeClass( "ui-state-highlight", 1500 );
         }, 500 );
 }
+
 function checkLength( o, n, min, max ) {
     if ( o.val().length > max || o.val().length < min ) {
             o.addClass( "ui-state-error" );
@@ -146,29 +147,70 @@ function validaAnoAcademico(selcalendario,boton){
         return 0;
     }
 }
-function validaAnoAcademico1(selcalendario,boton){
-    var seleccionado    = parseInt($("#seleccionAnoAcademico").val());
+function validaAnoAcademico1(selcalendario){    
+    var ano = new Date();
+    var dia1 = parseInt($(selcalendario).val().substr(0,2));
+    var mes1 = parseInt($(selcalendario).val().substr(3,2));
+    var ano1 = parseInt($(selcalendario).val().substr(6));
+    var dia2 = parseInt(ano.getDate());
+    var mes2 = parseInt(ano.getMonth())+1;
+    var ano2 = parseInt(ano.getFullYear());
+    
+    var seleccionado    = parseInt(ano.getFullYear());
     var calendario      = parseInt($(selcalendario).val().substr(6));
 
     if(calendario > seleccionado)
     {
-        alert('Fecha seleccionada fuera del año en que está trabajando!');
         $(selcalendario).val('');
         $(selcalendario).addClass("ui-state-error ui-state-highlight");
+        updateTips('Fecha seleccionada fuera del año en que está trabajando!');
         return 1;
     }
     else
     {
-        $(selcalendario).removeClass("ui-state-error ui-state-highlight");
-        return 0;
+        if(dia1<dia2 || mes1<mes2 || ano1<ano2)
+        {
+            $(selcalendario).val('');
+            $(selcalendario).addClass("ui-state-error ui-state-highlight");
+            updateTips('Imposible configurar en una fecha posterior!');
+            return 1;
+        }
+        else
+        {
+            $( ".validateTips" ).css('display','none');
+            $(selcalendario).removeClass("ui-state-error ui-state-highlight");
+            return 0;
+        }
     }
 }
 function eliminaFilaTabla()
 {
     $(this).parent().parent().remove();
     var tbl = document.getElementById('configCalificaciones');
+    $("#ultimaFila").val(tbl.rows.length-1);
     if(tbl.rows.length == 1){
         $("#configCalificaciones").hide();
         $("#contadorCalif").val(0);
     }
+}
+function eliminaFilaTabla2(valor,idevaluacion)
+{
+    $("#fechaCalif"+valor).datepicker( "destroy" )
+    $("#fechaCalif"+valor).remove();
+    $("#selectTipo"+valor).remove();
+    if($("#ponderacion").val() == 'si')
+        $("#ponderacionCalif"+valor).remove();
+    $("#"+valor).parent().parent().remove();
+    
+    
+    //Funcion que se encarga de eliminar una fila de la tabla!
+    var tbl = document.getElementById('configCalificaciones');
+    $("#ultimaFila").val(tbl.rows.length-1);
+    $(this).parent().parent().remove();
+    if(tbl.rows.length == 1){
+        $("#configCalificaciones").hide();
+        $("#contadorCalif").val(0);
+    }
+    
+    $.post(base_url+'sigeca/eliminaConfigCalificacion',{idEvaluacion:idevaluacion,idAsignatura:$("#idAsignatura").val()})
 }
