@@ -11,7 +11,7 @@
     </table>
 <?endforeach;?>
 
-<table class="tabla">
+<table class="tabla1">
     <?if($indice2 > 0):?>
     <?foreach($nombreCurso as $row):?>
         <tr>
@@ -34,13 +34,13 @@
             <?else:?>
                     <td><label></label></td>
             <?endif;?>
-            <td><select id="asignarProfesor<?=$i;?>" name="<?=$row->IDASIGNATURA;?>" class="ui-corner-all ancho180" onchange="actualizarProfesorCursoAsignatura(this.name,this.value)">
+            <td><select id="asignarProfesor<?=$i;?>" name="<?=$row->IDASIGNATURA;?>" class="ui-corner-all ancho100" onchange="actualizarProfesorCursoAsignatura(this.name,this.value)">
                     <option selected></option>
                     <?foreach($profesores as $row2):?>
                     <option value="<?=$row2->IDPROFESOR;?>"><?=$row2->NOMBRES.' '.$row2->APELLIDOP.' '.$row2->APELLIDOM;?></option>
                     <?endforeach;?>
                 </select></td>
-            <td><img src="<?=base_url()?>images/cancel.png" src="Eliminar" id="cancel<?=$i;?>" value="<?=$row->IDASIGNATURA;?>" name="<?=$row->IDASIGNATURA;?>" onclick="actualizarProfesorCursoAsignatura(this.name,'11111111');"></img></td>
+            <td align="center"><img src="<?=base_url()?>images/cancel.png" src="Eliminar" id="cancel<?=$i;?>" value="<?=$row->IDASIGNATURA;?>" name="<?=$row->IDASIGNATURA;?>" onclick="actualizarProfesorCursoAsignatura(this.name,'11111111');"></img></td>
             <td>
                 <?if(${"configurada".$i} == 'si'):?>
                     <button id="configEvaluaciones" onclick="elClick(<?=$i;?>)" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span style="color:green;" class="ui-button-text">Configurar</span></button>

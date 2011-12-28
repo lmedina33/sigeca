@@ -1,7 +1,7 @@
 <h3 align="center" class="h3Modificados">
     Asignaturas por Curso
 </h3>
-<table class="tabla">
+<table class="tabla1">
     <?if($indice2 > 0):?>
     <?foreach($nombreCurso as $row):?>
         <tr>
@@ -14,7 +14,7 @@
         <?foreach(${"asignaturasAsignadas".$i} as $row):?>
         <tr>
             <td><label><?=$row->NOMBREASIGNATURA;?></label></td>
-            <td><img src="<?=base_url()?>images/cancel.png" src="Eliminar" name="<?=$row->IDASIGNATURA;?>" onclick="eliminaAsignaturaCurso(this.name);"></img></td>
+            <td align="center"><img src="<?=base_url()?>images/cancel.png" src="Eliminar" name="<?=$row->IDASIGNATURA;?>" onclick="eliminaAsignaturaCurso(this.name);"></img></td>
         </tr>
         <?endforeach;?>
     <?endfor;?>

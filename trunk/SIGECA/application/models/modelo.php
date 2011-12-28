@@ -88,12 +88,14 @@ class modelo extends CI_Model
     {
         $this->db->select('*');
         $this->db->where('IDPROFESOR',$rut);
+        $this->db->where('BLOQUEO','no');
         return $this->db->get('PROFESOR');
     }
     function buscaTodosProfesores()
     {
         $this->db->select('*');
         $this->db->where('IDPROFESOR !=','11111111');
+        $this->db->where('BLOQUEO','no');
         return $this->db->get('PROFESOR');
     }
     function guardarNuevoProfesor($rut,$digito,$nombres,$aPaterno,$aMaterno,$direccion,$telefono,$prevision,$AFP,$titulo,$mension,$fNacimiento)
@@ -109,7 +111,8 @@ class modelo extends CI_Model
             "AFP"           =>$AFP,
             "FECHANACIMIENTO"=>$fNacimiento,
             "TITULO"        =>$titulo,
-            "MENSION"       =>$mension
+            "MENSION"       =>$mension,
+            "BLOQUEO"       => 'no'
         );
         $this->db->insert('PROFESOR',$datos);
         
@@ -137,7 +140,8 @@ class modelo extends CI_Model
             "AFP"           =>$AFP,
             "FECHANACIMIENTO"=>$fNacimiento,
             "TITULO"        =>$titulo,
-            "MENSION"       =>$mension
+            "MENSION"       =>$mension,
+            "BLOQUEO"       =>'no'
         );
         $this->db->where('IDPROFESOR',$rut);
         $this->db->update('PROFESOR',$datos);
@@ -277,7 +281,7 @@ class modelo extends CI_Model
         $this->db->where('ANOACADEMICO',$ano);
         return $this->db->get('CONFIGURACIONUTP');
     }
-    function guardaConfigAnoAcademico($ano,$fInicioA,$fFinA,$fInicioPS,$fFinPS,$fInicioSS,$fFinSS)
+    function guardaConfigAnoAcademico($ano,$fInicioA,$fFinA,$fInicioPS,$fFinPS,$fInicioSS,$fFinSS,$fFinS4,$fFinA4)
     {
         if($fInicioA == '01-JAN-00'){
             $datos=array(
@@ -287,7 +291,9 @@ class modelo extends CI_Model
                 "FECHAINICIOPS" =>$fInicioPS,
                 "FECHAFINPS"    =>$fFinPS,
                 "FECHAINICIOSS" =>$fInicioSS,
-                "FECHAFINSS"    =>$fFinSS
+                "FECHAFINSS"    =>$fFinSS,
+                "FECHAFINS4"    =>$fFinS4,
+                "FECHAFINA4"    =>$fFinA4
             );
             $this->db->insert('CONFIGURACIONUTP',$datos);
         }
@@ -298,7 +304,9 @@ class modelo extends CI_Model
                 "FECHAINICIOPS" =>$fInicioPS,
                 "FECHAFINPS"    =>$fFinPS,
                 "FECHAINICIOSS" =>$fInicioSS,
-                "FECHAFINSS"    =>$fFinSS
+                "FECHAFINSS"    =>$fFinSS,
+                "FECHAFINS4"    =>$fFinS4,
+                "FECHAFINA4"    =>$fFinA4
             );
             $this->db->where('ANOACADEMICO',$ano);
             $this->db->update('CONFIGURACIONUTP',$datos);
@@ -308,14 +316,16 @@ class modelo extends CI_Model
     {
         $this->db->select('*');
         $this->db->where('ANOACADEMICO',$ano);
+        $this->db->order_by('FECHAS');
         return $this->db->get('FERIADOS');
     }
-    function guardarFeriado($idferiado,$ano,$fecha)
+    function guardarFeriado($idferiado,$ano,$fecha,$motivo)
     {
         $data = array(
             "IDFERIADOS"    => $idferiado,
             "ANOACADEMICO"  => $ano,
-            "FECHAS"        => $fecha
+            "FECHAS"        => $fecha,
+            "MOTIVO"        => $motivo
         );
         $this->db->insert("FERIADOS",$data);
     }
@@ -468,6 +478,15 @@ class modelo extends CI_Model
         $this->db->where('IDASIGNATURA',$idasignatura);
         return $this->db->get('CALIFICACIONES');
     }
+    function buscaCalifC2($ano,$idasignatura,$tipo,$idalumno)
+    {
+        $this->db->select('*');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('TIPOCALIFICACION',$tipo);
+        $this->db->where('IDALUMNO',$idalumno);
+        return $this->db->get('CALIFICACIONES');
+    }
     function buscaNota3($ano,$idasignatura,$idcalificacion)
     {
         $this->db->select('*');
@@ -476,26 +495,78 @@ class modelo extends CI_Model
         $this->db->where('IDASIGNATURA',$idasignatura);
         return $this->db->get('CALIFICACIONES');
     }
-    function almacenarCalificaciones($idAlumno,$ano,$idAsignatura,$idCalif,$fecha,$calif,$idCurso)
+    function buscaCalifC2porIDCalificacion($ano,$idasignatura,$IDCALIFICACION)
+    {
+        $this->db->select('*');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('IDCALIFICACION',$IDCALIFICACION);
+        $this->db->where('TIPOCALIFICACION','C/2');
+        return $this->db->get('FECHACALIFICACION');
+    }
+    function buscaPonderacionNotas($ano,$idasignatura,$IDCALIFICACION)
+    {
+        $this->db->select('PONDERACION');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('IDCALIFICACION',$IDCALIFICACION);
+        return $this->db->get('FECHACALIFICACION')->result();
+    }
+    function almacenarCalificaciones($idAlumno,$ano,$idAsignatura,$idCalif,$fecha,$calif,$idCurso,$tipo)
     {
         if($calif == '')
-            $calif = '1';
-        $datos= array
-        (
-            "IDALUMNO" => $idAlumno,
-            "ANOACADEMICO" => $ano,
-            "IDASIGNATURA" => $idAsignatura,
-            "IDCALIFICACION" => $idCalif,
-            "FECHA" => $fecha,
-            "NOTAS" => $calif,
-            "TIPOCALIFICACION" => '0',
-            "IDCURSO" => $idCurso
-        );
-        $this->db->insert('CALIFICACIONES',$datos);
+            $calif = '10';
+        $this->db->select('*');
+        $this->db->where('IDALUMNO',$idAlumno);
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDASIGNATURA',$idAsignatura);
+        $this->db->where('IDCALIFICACION',$idCalif);
+        $this->db->where('IDCURSO',$idCurso);
+        $query = $this->db->get('CALIFICACIONES')->num_rows();
+        if($query > 0)
+        {
+            $datos= array
+            (
+                "FECHA" => $fecha,
+                "NOTAS" => $calif,
+                "TIPOCALIFICACION" => $tipo,
+                "BLOQUEO" =>'si'
+            );
+            $this->db->where('IDALUMNO',$idAlumno);
+            $this->db->where('ANOACADEMICO',$ano);
+            $this->db->where('IDASIGNATURA',$idAsignatura);
+            $this->db->where('IDCALIFICACION',$idCalif);
+            $this->db->where('IDCURSO',$idCurso);
+            $this->db->update('CALIFICACIONES',$datos);
+        }
+        else
+        {
+            $datos= array
+            (
+                "IDALUMNO" => $idAlumno,
+                "ANOACADEMICO" => $ano,
+                "IDASIGNATURA" => $idAsignatura,
+                "IDCALIFICACION" => $idCalif,
+                "FECHA" => $fecha,
+                "NOTAS" => $calif,
+                "TIPOCALIFICACION" => $tipo,
+                "IDCURSO" => $idCurso,
+                "BLOQUEO" =>'si'
+            );
+            $this->db->insert('CALIFICACIONES',$datos);   
+        }
+        
     }
     function buscaCursosEncargadoUTP($idprofesor)
     {
         $ano =  DATE('Y');
+        $this->db->select('*');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDUSUARIO',$idprofesor);
+        return $this->db->get('ENCARGADOUTP');
+    }
+    function buscaCursosEncargadoUTP2($ano,$idprofesor)
+    {
         $this->db->select('*');
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDUSUARIO',$idprofesor);
@@ -609,6 +680,11 @@ class modelo extends CI_Model
         $this->db->where('IDCALIFICACION',$idEvaluacion);
         $this->db->delete('FECHACALIFICACION');
     }
-    
+    function verificaFeriado($fecha)
+    {
+        $this->db->select('*');
+        $this->db->where('FECHAS',$fecha);
+        return $this->db->get('FERIADOS');
+    }
 }
 ?>

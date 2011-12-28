@@ -11,7 +11,7 @@
     </table>
 <?endforeach;?>
 
-<table class="tabla">
+<table class="tabla1">
     <?if($indice2 > 0):?>
         <?foreach($nombreCurso as $row):?>
             <tr>
