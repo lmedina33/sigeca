@@ -28,7 +28,7 @@ function funcionesInicio()
                         $("#anoAcademicoSeleccionado").html(htmlresponse,data);
                         $.ajax({
                             url:base_url+'sigeca/cargaTabs1_1',
-                            data:{ano:$("#seleccionAnoAcademico").val()},
+                            data:{ano:$("#seleccionAnoAcademico").val(),idutp:$("#idUTP").val()},
                             type:"POST",
                             cache:false,
                             success:
@@ -38,7 +38,7 @@ function funcionesInicio()
                         });
                         $.ajax({
                             url:base_url+'sigeca/cargaTabs1_12',
-                            data:{ano:$("#seleccionAnoAcademico").val()},
+                            data:{ano:$("#seleccionAnoAcademico").val(),idutp:$("#idUTP").val()},
                             type:"POST",
                             cache:false,
                             success:
@@ -86,7 +86,7 @@ function actualizaTabla()
 {
     $.ajax({
         url:base_url+'sigeca/cargaTabs1_1',
-        data:{ano:$("#seleccionAnoAcademico").val()},
+        data:{ano:$("#seleccionAnoAcademico").val(),idutp:$("#idUTP").val()},
         type:"POST",
         cache:false,
         success:
@@ -96,7 +96,7 @@ function actualizaTabla()
     });
     $.ajax({
         url:base_url+'sigeca/cargaTabs1_12',
-        data:{ano:$("#seleccionAnoAcademico").val()},
+        data:{ano:$("#seleccionAnoAcademico").val(),idutp:$("#idUTP").val()},
         type:"POST",
         cache:false,
         success:
@@ -132,18 +132,37 @@ function validaAnoAcademico(selcalendario,boton){
     var seleccionado    = parseInt($("#seleccionAnoAcademico").val());
     var calendario      = parseInt($(selcalendario).val().substr(6));
 
-    if(calendario > seleccionado)
+    if(calendario != seleccionado)
     {
         alert('Fecha seleccionada fuera del año en que está trabajando!');
         $("#"+boton).attr("disabled",true);
         $(selcalendario).val('');
         $(selcalendario).addClass("ui-state-error ui-state-highlight");
         return 1;
+        
     }
     else
     {
-        $(selcalendario).removeClass("ui-state-error ui-state-highlight");
-        $("#"+boton).attr("disabled",false);
+        if(selcalendario != "#feriadosCal"){
+            $.post(base_url+'sigeca/verificaFeriado',
+                {fecha:$(selcalendario).val()},
+                function(data){
+                    if(data.msj == 'si') //es feriado
+                    {
+                        alert('Fecha seleccionada es feriado por: '+data.tipo);
+                        $("#"+boton).attr("disabled",true);
+                        $(selcalendario).val('');
+                        $(selcalendario).addClass("ui-state-error ui-state-highlight");
+                        return 1;
+                    }
+                    else //no es feriado
+                    {
+                        $(selcalendario).removeClass("ui-state-error ui-state-highlight");
+                        $("#"+boton).attr("disabled",false);
+                        return 0;
+                    }
+                },"json");
+        }
         return 0;
     }
 }
@@ -159,7 +178,7 @@ function validaAnoAcademico1(selcalendario){
     var seleccionado    = parseInt(ano.getFullYear());
     var calendario      = parseInt($(selcalendario).val().substr(6));
 
-    if(calendario > seleccionado)
+    if(calendario != seleccionado)
     {
         $(selcalendario).val('');
         $(selcalendario).addClass("ui-state-error ui-state-highlight");
@@ -177,10 +196,30 @@ function validaAnoAcademico1(selcalendario){
         }
         else
         {
-            $( ".validateTips" ).css('display','none');
-            $(selcalendario).removeClass("ui-state-error ui-state-highlight");
+            if(selcalendario != "#feriadosCal"){
+                $.post(base_url+'sigeca/verificaFeriado',
+                    {fecha:$(selcalendario).val()},
+                    function(data){
+                        if(data.msj == 'si') //es feriado
+                        {
+                            $(selcalendario).val('');
+                            $(selcalendario).addClass("ui-state-error ui-state-highlight");
+                            updateTips('Fecha seleccionada es feriado por: '+data.tipo);
+                            return 1;
+                        }
+                        else //no es feriado
+                        {
+                            $( ".validateTips" ).css('display','none');
+                            $(selcalendario).removeClass("ui-state-error ui-state-highlight");
+                            return 0;
+                        }
+                    },"json");
+            }
             return 0;
-        }
+            /*$( ".validateTips" ).css('display','none');
+            $(selcalendario).removeClass("ui-state-error ui-state-highlight");
+            return 0;*/
+        }            
     }
 }
 function eliminaFilaTabla()
@@ -213,4 +252,15 @@ function eliminaFilaTabla2(valor,idevaluacion)
     }
     
     $.post(base_url+'sigeca/eliminaConfigCalificacion',{idEvaluacion:idevaluacion,idAsignatura:$("#idAsignatura").val()})
+}
+
+function validaFormatoNota(nota)
+{
+    if( $("#"+nota).val().length >2 || $("#"+nota).val().length ==1){
+        alert("Debe respetar el formato, dos cifras sin separación. Ejemplo: 70  "+nota);
+        $("#1").focus();
+        //$("#"+nota).select();
+        //$("#"+nota).focus();
+        
+    }
 }

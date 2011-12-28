@@ -1,7 +1,7 @@
 <div>
     <?if($cantProfesoresAsignados > 0):?>
     <h3 align="center" class="h3Modificados">Profesor Asignado</h3>
-    <table class="tabla">
+    <table class="tabla1">
         <tr>
             <th>Curso</th>
             <th>Profesor</th>
@@ -15,7 +15,7 @@
             <?foreach(${"profesorGuiaTabla".$i} as $row):?>
             <td><label><?=$row->NOMBRES.' '.$row->APELLIDOP.' '.$row->APELLIDOM;?><input type="hidden" id="profesorTabla<?=$i;?>" value="<?=$row->IDPROFESOR;?>" /></label></td>
             <?endforeach;?>
-            <td><img src="<?=base_url()?>images/cancel.png" src="Eliminar" name="<?=$i;?>" onclick="eliminaProfesorAsignado(this.name);"></img></td>
+            <td align="center"><img src="<?=base_url()?>images/cancel.png" src="Eliminar" name="<?=$i;?>" onclick="eliminaProfesorAsignado(this.name);"></img></td>
         </tr>
         <?endfor;?>
     </table>

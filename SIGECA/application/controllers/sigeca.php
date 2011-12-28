@@ -48,6 +48,7 @@ class sigeca extends CI_Controller {
             }
         }
         $datos['anios']             =   $this->modelo->buscaAnioConfigUTP()->result();
+        $datos['idusuario'] = $idusuario;
         $this->load->view('principal',$datos);
     }
     function tabs_3()
@@ -434,6 +435,8 @@ class sigeca extends CI_Controller {
                     $datos['fechaFinPS']    = $this->convierteFecha2($row->FECHAFINPS);
                     $datos['fechaInicioSS'] = $this->convierteFecha2($row->FECHAINICIOSS);
                     $datos['fechaFinSS']    = $this->convierteFecha2($row->FECHAFINSS);
+                    $datos['fechaFinS4']    = $this->convierteFecha2($row->FECHAFINS4);
+                    $datos['fechaFinA4']    = $this->convierteFecha2($row->FECHAFINA4);
                 }
                 else{
                     $datos['fechaInicioA']  = "";
@@ -442,6 +445,8 @@ class sigeca extends CI_Controller {
                     $datos['fechaFinPS']    = "";
                     $datos['fechaInicioSS'] = "";
                     $datos['fechaFinSS']    = "";
+                    $datos['fechaFinS4']    = "";
+                    $datos['fechaFinA4']    = "";
                 }
             endforeach;
             $datos['datosFeriados'] = $this->modelo->buscaFeriados($ano)->result();
@@ -466,7 +471,9 @@ class sigeca extends CI_Controller {
         $fechaFinPS     = $this->convierteFecha1($this->input->post('fechaFinPS'));
         $fechaInicioSS  = $this->convierteFecha1($this->input->post('fechaInicioSS'));
         $fechaFinSS     = $this->convierteFecha1($this->input->post('fechaFinSS'));
-        $this->modelo->guardaConfigAnoAcademico($ano,$fechaInicioA,$fechaFinA,$fechaInicioPS,$fechaFinPS,$fechaInicioSS,$fechaFinSS);
+        $fechaFinS4     = $this->convierteFecha1($this->input->post('fechaFinS4'));
+        $fechaFinA4     = $this->convierteFecha1($this->input->post('fechaFinA4'));
+        $this->modelo->guardaConfigAnoAcademico($ano,$fechaInicioA,$fechaFinA,$fechaInicioPS,$fechaFinPS,$fechaInicioSS,$fechaFinSS,$fechaFinS4,$fechaFinA4);
     }
     function cargaFeriados()
     {
@@ -479,8 +486,9 @@ class sigeca extends CI_Controller {
     {
         $ano = $this->input->post('ano');
         $fecha = $this->convierteFecha1($this->input->post('fecha'));
+        $motivo = $this->input->post('motivo');
         $idferiado = $this->generaRandom3();
-        $this->modelo->guardarFeriado($idferiado,$ano,$fecha);        
+        $this->modelo->guardarFeriado($idferiado,$ano,$fecha,$motivo);        
     }
     function eliminaFeriado()
     {
@@ -490,6 +498,7 @@ class sigeca extends CI_Controller {
     function cargaTabs1_1()
     {
         $ano = $this->input->post('ano');
+        $idutp = $this->input->post('idutp');
         //Se debe cargar la configuración que existe para el año academico seleccionado!!
         $datos['profesores']    = $this->modelo->buscaTodosProfesores()->result();
         $datos['asignaturas']   = $this->modelo->buscaTodasAsignatura()->result();
@@ -504,30 +513,38 @@ class sigeca extends CI_Controller {
         endforeach;
         $datos['indice'] = $i;
         
-        $profesoresAsignados = $this->modelo->buscaDatosCursoProfesor($ano);
-        $datos['cantProfesoresAsignados'] = $profesoresAsignados->num_rows();
+        $cursosUTP = $this->modelo->buscaCursosEncargadoUTP2($ano,$idutp);
         $i=0;
-        foreach ($profesoresAsignados->result() as $row):
-            $datos['profesorGuiaTabla'.$i] = $this->modelo->buscaProfesorPorID($row->IDPROFESOR)->result();
-            $datos['cursosTabla'.$i] = $this->modelo->buscaDatosCursoPorID($row->IDCURSO)->result();
-            $i++;
+        foreach($cursosUTP->result() as $row):
+            $profesoresAsignados = $this->modelo->buscaDatosCursoProfesorPorID($ano,$row->IDCURSO);
+            foreach ($profesoresAsignados->result() as $row):
+                $datos['profesorGuiaTabla'.$i] = $this->modelo->buscaProfesorPorID($row->IDPROFESOR)->result();
+                $datos['cursosTabla'.$i] = $this->modelo->buscaDatosCursoPorID($row->IDCURSO)->result();
+                $i++;
+            endforeach;
         endforeach;
+        
+        $datos['cantProfesoresAsignados'] = $i;
         
         $this->load->view('tabs1_1',$datos);
     }
     function cargaTabs1_12()
     {
         $ano = $this->input->post('ano');
+        $idutp = $this->input->post('idutp');
         
-        $profesoresAsignados = $this->modelo->buscaDatosCursoProfesor($ano);
-        $datos['cantProfesoresAsignados'] = $profesoresAsignados->num_rows();
+        $cursosUTP = $this->modelo->buscaCursosEncargadoUTP2($ano,$idutp);
         $i=0;
-        foreach ($profesoresAsignados->result() as $row):
-            $datos['profesorGuiaTabla'.$i] = $this->modelo->buscaProfesorPorID($row->IDPROFESOR)->result();
-            $datos['cursosTabla'.$i] = $this->modelo->buscaDatosCursoPorID($row->IDCURSO)->result();
-            $i++;
+        foreach($cursosUTP->result() as $row):
+            $profesoresAsignados = $this->modelo->buscaDatosCursoProfesorPorID($ano,$row->IDCURSO);
+            foreach ($profesoresAsignados->result() as $row):
+                $datos['profesorGuiaTabla'.$i] = $this->modelo->buscaProfesorPorID($row->IDPROFESOR)->result();
+                $datos['cursosTabla'.$i] = $this->modelo->buscaDatosCursoPorID($row->IDCURSO)->result();
+                $i++;
+            endforeach;
         endforeach;
         
+        $datos['cantProfesoresAsignados'] = $i;
         $this->load->view('tabs1_12',$datos);
     }
     function cargaTabs1_2()
@@ -695,17 +712,55 @@ class sigeca extends CI_Controller {
         endforeach;
         
         //Calcular Promedios
-        /*foreach($datos['alumnos'] as $row):
+        $datosCurso =  $this->modelo->buscaDatosCursoPorID($idcurso);
+        foreach($datosCurso->result() as $row):
+            $orden = $row->ORDEN;
+        endforeach;
+        $j=1;
+        $promedio[$j] = 0;
+        $verPonde = 'si';
+        foreach($datos['alumnos'] as $row):
             $notas = $this->modelo->buscaNota2($row->IDALUMNO,$ano,$idasignatura);
             $cantNotas = $notas->num_rows();
             $notas = $notas->result();
             $i=0;
-            foreach($notas as $row1):
-                $ponderacion[$i] = $this->modelo->buscaPonderacionNotas();
-                $i++;
-            endforeach;
+            $suma=0;
+            if($orden<6){
+                $cantC2 = $this->modelo->buscaCalifC2($ano,$idasignatura,"C/2",$row->IDALUMNO);
+                $cantNotas = $cantNotas + $cantC2->num_rows();
+                $verPonde='no';
+                foreach($notas as $row1):
+                    $ponderacion[$i] = 100/$cantNotas;
+                    $notaC2 = $this->modelo->buscaCalifC2porIDCalificacion($ano,$idasignatura,$row1->IDCALIFICACION)->num_rows();
+                    if($notaC2 > 0)
+                        $nota[$i] = ($row1->NOTAS)*2;
+                    else
+                        $nota[$i] = $row1->NOTAS;
+                    $i++;
+                endforeach;
+            }
+            else{
+                foreach($notas as $row1):
+                    $ponderaciones = $this->modelo->buscaPonderacionNotas($ano,$idasignatura,$row1->IDCALIFICACION);
+                    foreach($ponderaciones as $row2):
+                        $ponderacion[$i] = $row2->PONDERACION;
+                        $suma = $suma + $row2->PONDERACION;
+                    endforeach;
+                    $nota[$i] = $row1->NOTAS;
+                    $i++;
+                endforeach;
+            }
+            $promedio=0;
+            for($k=0;$k<$i;$k++):
+                $promedio = $promedio + $nota[$k]*$ponderacion[$k]/100;
+            endfor;
+            if($suma!=0)
+                $datos['promedio'.$j] = $promedio/($suma/100);
+            else
+                $datos['promedio'.$j] = $promedio;
+            $j++;
         endforeach;
-        */
+        $datos['verPonde'] = $verPonde;
         $this->load->view('tabs3_ingresarNotas',$datos);
     }
     function almacenarCalificaciones()
@@ -720,7 +775,12 @@ class sigeca extends CI_Controller {
         $fecha = $this->convierteFecha2($fecha);
         $fecha = $this->convierteFecha1($fecha);
         
-        $this->modelo->almacenarCalificaciones($idAlumno,$ano,$idAsignatura,$idCalif,$fecha,$calif,$idCurso); //FALTA EL TIPO DE CALIFICACION!!
+        $tipo = $this->modelo->buscaFechaCalificacion($ano,$idAsignatura,$idCalif);
+        foreach($tipo->result() as $row):
+            $tipo = $row->TIPOCALIFICACION;
+        endforeach;
+        
+        $this->modelo->almacenarCalificaciones($idAlumno,$ano,$idAsignatura,$idCalif,$fecha,$calif,$idCurso,$tipo);
     }
     function cargaConfigurarAsignatura()
     {
@@ -791,5 +851,23 @@ class sigeca extends CI_Controller {
         $idAsignatura = $this->input->post('idAsignatura');
         $ano = DATE('Y');
         $this->modelo->eliminaConfigCalificacion($idEvaluacion,$idAsignatura,$ano);
+    }
+    function verificaFeriado()
+    {
+        $fecha = $this->input->post('fecha');
+        $fecha = $this->convierteFecha1($fecha);
+        $msj = 'no';
+        $tipo = null;
+        
+        if($this->modelo->verificaFeriado($fecha)->num_rows() > 0) //Existe la fecha como feriado!
+        {
+            $msj = 'si';
+            foreach($this->modelo->verificaFeriado($fecha)->result() as $row):
+                $tipo = $row->MOTIVO;
+            endforeach;
+        }
+        
+        echo json_encode(array('msj'=>$msj,'tipo'=>$tipo));
+        
     }
 }

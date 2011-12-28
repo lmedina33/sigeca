@@ -40,6 +40,7 @@
         <div id="tabs-1">
             <div class="tipsTabs" style="float:none; width: 40%;">
                 <label>Seleccione Año Académico:</label>
+                <input type="hidden" id="idUTP" value="<?=$idusuario;?>"/>
                 <select id="seleccionAnoAcademico" class="ui-corner-all ancho180">
                     <option selected></option>
                     <?foreach($anios as $row):?>

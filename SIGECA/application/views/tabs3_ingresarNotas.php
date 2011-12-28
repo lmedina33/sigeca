@@ -1,4 +1,4 @@
-
+<label class="msjError">Ingresar nota sin punto ni coma, Ejemplo: 65</label>
 <table class="ui-widget-content ui-corner-all" id="tabla1">
     <tr>
         <th>Nº</th>
@@ -6,7 +6,11 @@
         <th>A. Materno</th>
         <th>Nombres</th>
         <?foreach($datosCalificacion as $row):?>
-            <th><?=$row->TIPOCALIFICACION;?><br><?=$row->PONDERACION;?>%<br><?=$row->FECHA;?></th>
+            <?if($verPonde == 'si'):?>
+                <th><?=$row->TIPOCALIFICACION;?><br><?=$row->PONDERACION;?>%<br><?=$row->FECHA;?></th>
+            <?else:?>
+                <th><?=$row->TIPOCALIFICACION;?><br><?=$row->FECHA;?></th>  
+            <?endif;?>
         <?endforeach;?>
         <th>Promedios</th>
     </tr>
@@ -22,7 +26,11 @@
                 <td align="center">
                     <?if(${'cantNota'.$i.$k} == '1'):?>
                         <?foreach(${"nota".$i.$k} as $row2):?>
-                            <input value="<?=$row2->NOTAS;?>" disabled class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>"/>
+                            <?if($row2->BLOQUEO =='si'):?>
+                                <input value="<?=$row2->NOTAS;?>" disabled class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>"/>
+                            <?else:?>
+                                <input id="<?=$j;?>" value="<?=$row2->NOTAS;?>" class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>">
+                            <?endif;?>
                         <?endforeach;?>
                     <?else:?>
                         <input disabled class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>"/>
@@ -32,7 +40,11 @@
                 <td align="center">
                     <?if(${'cantNota'.$i.$k} == '1'):?>
                         <?foreach(${"nota".$i.$k} as $row2):?>
-                            <input value="<?=$row2->NOTAS;?>" disabled id="<?=$j;?>" class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>"/>
+                            <?if($row2->BLOQUEO =='si'):?>
+                                <input value="<?=$row2->NOTAS;?>" disabled id="<?=$j;?>" class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>"/>
+                            <?else:?>
+                                <input id="<?=$j;?>" value="<?=$row2->NOTAS;?>" class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>">
+                            <?endif;?>
                         <?endforeach;?>
                     <?else:?>
                         <input id="<?=$j;?>" class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>"/>
@@ -44,7 +56,7 @@
             <?endif;?>
         <?$j=$largo+$j;$k++;endforeach;?>
         <td>
-            <input disabled class="ui-corner-all" type="text" size="3" value='p'></input>
+            <input disabled class="ui-corner-all" type="text" size="3" value='<?=${"promedio".$i};?>'></input>
         </td>
     </tr>
     <?$i++;endforeach;?>
@@ -70,6 +82,40 @@
 </div>
 
 <script>
+    tb = $('input');
+    
+    if ($.browser.mozilla) {
+        $(tb).keypress(enter2tab);
+    } else {
+        $(tb).keydown(enter2tab);
+    }
+    
+    function enter2tab(e) { //Validación de las calificaciones, además permite avanzar con tecla Enter
+        if (e.keyCode == 13 || e.keyCode == 40) {
+            cb = parseInt($(this).attr('tabindex'));
+            nota = $(this).val();
+            if ((nota.length == 2 && nota<=70 && nota>=10) || nota.length==0  ) {
+                $(':input[tabindex=\'' + (cb + 1) + '\']').focus();
+                $(':input[tabindex=\'' + (cb + 1) + '\']').select();
+                e.preventDefault();
+                return false;
+            }
+            else{
+                if(nota>70 || nota <10)
+                    alert('La calificacion solo puede estar entre [10 - 70]');
+                else
+                    alert("Debe respetar el formato, dos cifras sin separación. Por Ejemplo: 70");
+            }           
+        }
+        if(e.keyCode==38){
+            cb = parseInt($(this).attr('tabindex'));
+            $(':input[tabindex=\'' + (cb - 1) + '\']').focus();
+            $(':input[tabindex=\'' + (cb - 1) + '\']').select();
+            e.preventDefault();
+            return false;
+        }
+    }
+    
     $("#guardarNotas").button().click(function(){
         var i=1,j=1,k=0,m=0,kini=0,kfin=0;
         for(m=0;m<parseInt($("#cantCheckBox").val());m++)
