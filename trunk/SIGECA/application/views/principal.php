@@ -29,7 +29,7 @@
     <?endif;?>
     <?if($cargo =='2'):?>
         <ul>
-            <li><a href="#tabs-1">Sección UTP</a></li>
+            <li><a href="<?=base_url();?>index.php/sigeca/tabs_1">Sección UTP</a></li>
             <?if($utpCursos == 'si'):?>
                 <li><a href="<?=base_url();?>index.php/sigeca/tabs_8">Asignaturas</a></li>
             <?endif;?>
@@ -37,37 +37,7 @@
             <li><a href="#tabs-4">Informes</a></li>
             <li><a href="<?=base_url();?>index.php/sigeca/tabs_7">Datos Usuario</a></li>
         </ul>
-        <div id="tabs-1">
-            <div class="tipsTabs" style="float:none; width: 40%;">
-                <label>Seleccione Año Académico:</label>
-                <input type="hidden" id="idUTP" value="<?=$idusuario;?>"/>
-                <select id="seleccionAnoAcademico" class="ui-corner-all ancho180">
-                    <option selected></option>
-                    <?foreach($anios as $row):?>
-                        <option><?=$row->ANOACADEMICO;?></option>
-                    <?endforeach;?>
-                </select>
-            </div>
-            <div id="anoAcademicoSeleccionado"></div>
-            <br></br>
-            <div id="accordionUTP2">
-                <h3><a href="#">Cierre de Semestre</a></h3>
-                <div>
-                    <p>Realización del Cierre de Semestre en Curso</p>
-                    <p>Activará la generación de reportes estadísticos del Semestre</p>
-                </div>
-                <h3><a href="#">Cierre Año Escolar</a></h3>
-                <div>
-                    <p>Realización del Cierre de Año Escolar</p>
-                    <p>Activará la generación de reportes estadísticos Anuales</p>
-                </div>
-                <h3><a href="#">Modificar Calificación</a></h3>
-                <div>
-                    <p>Buscar Alumno</p>
-                    <p>Buscar Asignatura</p>
-                </div>
-            </div>
-        </div>
+        
         <div id="tabs-4">
             <div id="accordionINF">
                 <h3><a href="#">Informe Notas Parciales</a></h3>
@@ -132,6 +102,7 @@
             <li><a href="<?=base_url();?>index.php/sigeca/tabs_8">Asignaturas</a></li>
             <li><a href="<?=base_url();?>index.php/sigeca/tabs_3">Registro de Notas</a></li>
             <?if($cargo=='4'):?>
+                <li><a href="<?=base_url();?>index.php/sigeca/tabs_Curso">Mis Cursos</a></li>
                 <li><a href="#tabs-4">Informes</a></li>
             <?endif;?>
             <li><a href="<?=base_url();?>index.php/sigeca/tabs_7">Datos Usuario</a></li>

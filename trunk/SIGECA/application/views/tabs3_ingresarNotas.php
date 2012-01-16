@@ -27,23 +27,42 @@
                     <?if(${'cantNota'.$i.$k} == '1'):?>
                         <?foreach(${"nota".$i.$k} as $row2):?>
                             <?if($row2->BLOQUEO =='si'):?>
-                                <input value="<?=$row2->NOTAS;?>" disabled class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>"/>
+                                <?if($row2->NOTAS < 40):?>
+                                    <input value="<?=$row2->NOTAS;?>" disabled class="ui-corner-all bloqueo rojo" type="text" size="3" tabindex="<?=$j;?>"/>
+                                <?else:?>
+                                    <input value="<?=$row2->NOTAS;?>" disabled class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                <?endif;?>
                             <?else:?>
-                                <input id="<?=$j;?>" value="<?=$row2->NOTAS;?>" class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>">
+                                <?if($row2->NOTAS < 40):?>
+                                    <input id="<?=$j;?>" value="<?=$row2->NOTAS;?>" class="ui-corner-all rojo" type="text" size="3" tabindex="<?=$j;?>">
+                                <?else:?>
+                                    <input id="<?=$j;?>" value="<?=$row2->NOTAS;?>" class="ui-corner-all azul" type="text" size="3" tabindex="<?=$j;?>">
+                                <?endif;?>
                             <?endif;?>
                         <?endforeach;?>
                     <?else:?>
                         <input disabled class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>"/>
                     <?endif;?>
+                    <?if($i==1):?>
+                        <input id="calificacion<?=$l;?>" type="hidden" size="2" value="<?=$row1->IDCALIFICACION;?>" />
+                    <?$l++;endif;?>
                 </td>
             <?else:?>
                 <td align="center">
                     <?if(${'cantNota'.$i.$k} == '1'):?>
                         <?foreach(${"nota".$i.$k} as $row2):?>
                             <?if($row2->BLOQUEO =='si'):?>
-                                <input value="<?=$row2->NOTAS;?>" disabled id="<?=$j;?>" class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>"/>
+                                <?if($row2->NOTAS < 40):?>
+                                    <input value="<?=$row2->NOTAS;?>" disabled id="<?=$j;?>" class="ui-corner-all bloqueo rojo" type="text" size="3" tabindex="<?=$j;?>"/>
+                                <?else:?>
+                                    <input value="<?=$row2->NOTAS;?>" disabled id="<?=$j;?>" class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                <?endif;?>
                             <?else:?>
-                                <input id="<?=$j;?>" value="<?=$row2->NOTAS;?>" class="ui-corner-all" type="text" size="3" tabindex="<?=$j;?>">
+                                <?if($row2->NOTAS < 40):?>
+                                    <input id="<?=$j;?>" value="<?=$row2->NOTAS;?>" class="ui-corner-all rojo" type="text" size="3" tabindex="<?=$j;?>">
+                                <?else:?>
+                                    <input id="<?=$j;?>" value="<?=$row2->NOTAS;?>" class="ui-corner-all azul" type="text" size="3" tabindex="<?=$j;?>">
+                                <?endif;?>
                             <?endif;?>
                         <?endforeach;?>
                     <?else:?>
@@ -56,7 +75,11 @@
             <?endif;?>
         <?$j=$largo+$j;$k++;endforeach;?>
         <td>
-            <input disabled class="ui-corner-all" type="text" size="3" value='<?=${"promedio".$i};?>'></input>
+            <?if(${"promedio".$i} < 40):?>
+                <input disabled class="ui-corner-all bloqueo rojo" type="text" size="3" value='<?=${"promedio".$i};?>'></input>
+            <?else:?>
+                <input disabled class="ui-corner-all bloqueo azul" type="text" size="3" value='<?=${"promedio".$i};?>'></input>
+            <?endif;?>
         </td>
     </tr>
     <?$i++;endforeach;?>
@@ -91,10 +114,14 @@
     }
     
     function enter2tab(e) { //Validación de las calificaciones, además permite avanzar con tecla Enter
-        if (e.keyCode == 13 || e.keyCode == 40) {
+        if (e.keyCode == 13 || e.keyCode == 40 || e.keyCode == 9) {
             cb = parseInt($(this).attr('tabindex'));
             nota = $(this).val();
             if ((nota.length == 2 && nota<=70 && nota>=10) || nota.length==0  ) {
+                if(nota <40)
+                    $(this).addClass('rojo');
+                else
+                    $(this).addClass('azul');
                 $(':input[tabindex=\'' + (cb + 1) + '\']').focus();
                 $(':input[tabindex=\'' + (cb + 1) + '\']').select();
                 e.preventDefault();
@@ -105,6 +132,10 @@
                     alert('La calificacion solo puede estar entre [10 - 70]');
                 else
                     alert("Debe respetar el formato, dos cifras sin separación. Por Ejemplo: 70");
+                $(':input[tabindex=\'' + (cb) + '\']').focus();
+                $(':input[tabindex=\'' + (cb) + '\']').select();
+                e.preventDefault();
+                return false;
             }           
         }
         if(e.keyCode==38){

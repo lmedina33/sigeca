@@ -1,7 +1,7 @@
 <input type="hidden" id="idAsignatura"  value="<?=$idAsignatura;?>"/>
 <input type="hidden" id="contadorCalif" value="<?=$cantEvaluaciones;?>"/>
 <input type="hidden" id="ponderacion"   value="<?=$ponderacion?>"/>
-<input type="hidden" id="ultimaFila" value="<?=$ultimaFila;?>"/>
+<input type="hidden" id="ultimaFila"    value="<?=$ultimaFila;?>"/>
 <?$i=0;?>
 <table>
     <tr>
