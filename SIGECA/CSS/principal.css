@@ -140,3 +140,19 @@ table.tabla td {
 .tabla1 tr:nth-child(odd){ background: #deedf7;}
 .tabla1 tr:nth-child(even){ background: #eaf4fc;}
 
+.bloqueo
+{
+    background-color: #deedf7;
+}
+.rojo
+{ 
+    color:red;
+}
+.azul
+{
+    color:blue;
+}
+.desabilitado{
+    background-color: #f2f5f7;
+    color: #2779aa;
+}

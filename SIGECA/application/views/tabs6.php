@@ -181,7 +181,7 @@
         
     $("#crearAsignatura").dialog({
         autoOpen: false,
-        height: 180,
+        height: 220,
         width: 310,
         modal: true,
         buttons: {'Guardar':function(){
@@ -190,9 +190,18 @@
                     bValid = bValid && checkLength( nombreAS, "Nombre Asignatura", 1, 100 );
                     if(bValid)
                     {
+                        var electivo = $("input[name='electivo']:checked").val();
+                        var calificacion = $("input[name='calificacion']:checked").val();
+                       
                         $.post(
                             base_url+'sigeca/guardarNuevaAsignatura',
-                            {nombre:nombreAS.val()}
+                            {
+                                nombre:nombreAS.val(),
+                                electivo:electivo,
+                                calificacion:calificacion
+                            },function(htmlresponse, data){
+                                $("#divDatosEditarAsignatura").html(htmlresponse,data);
+                            }
                         );
                         $( this ).dialog( "close" );
                     }
@@ -204,6 +213,8 @@
         close: function() {
             nombreAS.val( "" ).removeClass( "ui-state-error" );
             tips.val("").removeClass("validateTips2");
+            $('#electivoNo').attr('checked','true');
+            $('#califNota').attr('checked','true');
             tips.css('display','none');
             }
     });
@@ -263,6 +274,26 @@
             <td><label>Nombre</label></td>
             <td>:</td>
             <td><input id="nombreAsignatura"     class="ancho180 ui-corner-all"    /></td>
+        </tr>
+        <tr>
+            <td>
+                <label>Electivo</label>
+            </td>
+            <td>:</td>
+            <td>
+                <input id="electivoNo" type="radio" name="electivo" value="No" checked></input><label>No</label>
+                &ensp;&ensp;<input type="radio" name="electivo" value="Si"></input><label>Si</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label>Calificación</label>
+            </td>
+            <td>:</td>
+            <td>
+                <input id="califNota" type="radio" name="calificacion" value="Nota" checked></input><label>Nota</label>
+                <input type="radio" name="calificacion" value="Concepto"></input><label>Concepto</label>
+            </td>
         </tr>
     </table>
     <p class="validateTips"></p>

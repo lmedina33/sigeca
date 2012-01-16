@@ -1,5 +1,4 @@
-<div id="tabs-2">
-    <div id="accordionCrarProfesor">
+<div id="accordionCrarProfesor">
         <h3><a href="#">Registrar Nuevo Profesor</a></h3>
         <div>
         <div class="divEstilo1" style="float:none; margin-left: 13%; height: 200px;">
@@ -69,11 +68,8 @@
         </div>
         </div>
     </div>
-</div>
-
 <script>
     $('#accordionCrarProfesor').accordion({collapsible: true});
-
     //Validar RUT!
     $('#digito').blur(function(){
         if($('#rut').val() != '' && $('#digito').val() != ''  ){

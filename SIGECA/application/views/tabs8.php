@@ -1,5 +1,4 @@
 <div id="tabs-8">
-    <h3 align="center">Configuración Asignaturas</h3>
     <div id="divCursoSeleccionado2" class="divEstilo1" style="float:none; margin-left: 13%;">
         <div class="tipsTabs" style="float:none; width: 50%;">
             <label>Seleccione Curso:</label>

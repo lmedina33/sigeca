@@ -184,10 +184,12 @@ class modelo extends CI_Model
         $this->db->where('IDCURSO',$idcurso);
         $this->db->update('CURSOS',$datos);
     }
-    function guardarEditarAsignatura($idasignatura,$nombre)
+    function guardarEditarAsignatura($idasignatura,$nombre,$tipoAsignatura,$tipoEvaluacion)
     {
         $datos = array(
-            "NOMBREASIGNATURA"    =>$nombre
+            "NOMBREASIGNATURA"    =>$nombre,
+            "TIPOASIGNATURA" => $tipoAsignatura,
+            "TIPOEVALUACION" => $tipoEvaluacion
         );
         $this->db->where('IDASIGNATURA',$idasignatura);
         $this->db->update('ASIGNATURA',$datos);
@@ -222,11 +224,13 @@ class modelo extends CI_Model
         );
         $this->db->insert('CURSOS',$datos);
     }
-    function guardarNuevaAsignatura($idasignatura,$nombre)
+    function guardarNuevaAsignatura($idasignatura,$nombre,$tipoAsignatura,$tipoEvaluacion)
     {
         $datos = array(
             "IDASIGNATURA" => $idasignatura,
-            "NOMBREASIGNATURA" => $nombre
+            "NOMBREASIGNATURA" => $nombre,
+            "TIPOASIGNATURA" => $tipoAsignatura,
+            "TIPOEVALUACION" => $tipoEvaluacion
         );
         $this->db->insert('ASIGNATURA',$datos);
     }
@@ -390,19 +394,28 @@ class modelo extends CI_Model
         $this->db->where('IDCURSO',$IDCURSO);
         return $this->db->get('CURSOPROFESOR');
     }
-    function buscaFechaCalificacion($ano,$idasignatura,$idcalificacion)
+    function buscaCursosProfesorGuia($ano,$idProfesor)
+    {
+        $this->db->select('*');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDPROFESOR',$idProfesor);
+        return $this->db->get('CURSOPROFESOR');
+    }
+    function buscaFechaCalificacion($ano,$idasignatura,$idcalificacion,$semestre)
     {
         $this->db->select('*');
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
         $this->db->where('IDCALIFICACION',$idcalificacion);
+        $this->db->where('SEMESTRE',$semestre);
         return $this->db->get('FECHACALIFICACION');
     }
-    function buscaFechaCalificacion2($ano,$idasignatura)
+    function buscaFechaCalificacion2($ano,$idasignatura,$semestre)
     {
         $this->db->select('*');
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('SEMESTRE',$semestre);
         $this->db->order_by('FECHA');
         return $this->db->get('FECHACALIFICACION');
     }
@@ -461,58 +474,64 @@ class modelo extends CI_Model
         $this->db->order_by('APELLIDOP','asc');
         return $this->db->get();
     }
-    function buscaNota($IDALUMNO,$ano,$idasignatura,$IDCALIFICACION)
+    function buscaNota($IDALUMNO,$ano,$idasignatura,$IDCALIFICACION,$semestre)
     {
         $this->db->select('*');
         $this->db->where('IDALUMNO',$IDALUMNO);
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
         $this->db->where('IDCALIFICACION',$IDCALIFICACION);
+        $this->db->where('SEMESTRE',$semestre);
         return $this->db->get('CALIFICACIONES');
     }
-    function buscaNota2($IDALUMNO,$ano,$idasignatura)
+    function buscaNota2($IDALUMNO,$ano,$idasignatura,$semestre)
     {
         $this->db->select('*');
         $this->db->where('IDALUMNO',$IDALUMNO);
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('SEMESTRE',$semestre);
         return $this->db->get('CALIFICACIONES');
     }
-    function buscaCalifC2($ano,$idasignatura,$tipo,$idalumno)
+    function buscaCalifC2($ano,$idasignatura,$tipo,$idalumno,$semestre)
     {
         $this->db->select('*');
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
         $this->db->where('TIPOCALIFICACION',$tipo);
         $this->db->where('IDALUMNO',$idalumno);
+        $this->db->where('SEMESTRE',$semestre);
         return $this->db->get('CALIFICACIONES');
     }
-    function buscaNota3($ano,$idasignatura,$idcalificacion)
+    function buscaNota3($ano,$idasignatura,$idcalificacion,$semestre)
     {
         $this->db->select('*');
         $this->db->where('IDCALIFICACION',$idcalificacion);
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('SEMESTRE',$semestre);
         return $this->db->get('CALIFICACIONES');
     }
-    function buscaCalifC2porIDCalificacion($ano,$idasignatura,$IDCALIFICACION)
+    function buscaCalifC2porIDCalificacion($ano,$idasignatura,$IDCALIFICACION,$semestre)
     {
         $this->db->select('*');
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
         $this->db->where('IDCALIFICACION',$IDCALIFICACION);
         $this->db->where('TIPOCALIFICACION','C/2');
+        $this->db->where('SEMESTRE',$semestre);
         return $this->db->get('FECHACALIFICACION');
     }
-    function buscaPonderacionNotas($ano,$idasignatura,$IDCALIFICACION)
+    function buscaPonderacionNotas($ano,$idasignatura,$IDCALIFICACION,$semestre)
     {
         $this->db->select('PONDERACION');
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
         $this->db->where('IDCALIFICACION',$IDCALIFICACION);
+        $this->db->where('SEMESTRE',$semestre);
         return $this->db->get('FECHACALIFICACION')->result();
     }
-    function almacenarCalificaciones($idAlumno,$ano,$idAsignatura,$idCalif,$fecha,$calif,$idCurso,$tipo)
+    function almacenarCalificaciones($idAlumno,$ano,$idAsignatura,$idCalif,$fecha,$calif,$idCurso,$tipo,$semestre)
     {
         if($calif == '')
             $calif = '10';
@@ -522,14 +541,15 @@ class modelo extends CI_Model
         $this->db->where('IDASIGNATURA',$idAsignatura);
         $this->db->where('IDCALIFICACION',$idCalif);
         $this->db->where('IDCURSO',$idCurso);
+        $this->db->where('SEMESTRE',$semestre);
         $query = $this->db->get('CALIFICACIONES')->num_rows();
         if($query > 0)
         {
             $datos= array
             (
-                "FECHA" => $fecha,
+                //"FECHA" => $fecha,
                 "NOTAS" => $calif,
-                "TIPOCALIFICACION" => $tipo,
+                //"TIPOCALIFICACION" => $tipo,
                 "BLOQUEO" =>'si'
             );
             $this->db->where('IDALUMNO',$idAlumno);
@@ -537,21 +557,23 @@ class modelo extends CI_Model
             $this->db->where('IDASIGNATURA',$idAsignatura);
             $this->db->where('IDCALIFICACION',$idCalif);
             $this->db->where('IDCURSO',$idCurso);
+            $this->db->where('SEMESTRE',$semestre);
             $this->db->update('CALIFICACIONES',$datos);
         }
         else
         {
             $datos= array
             (
-                "IDALUMNO" => $idAlumno,
-                "ANOACADEMICO" => $ano,
-                "IDASIGNATURA" => $idAsignatura,
-                "IDCALIFICACION" => $idCalif,
-                "FECHA" => $fecha,
-                "NOTAS" => $calif,
-                "TIPOCALIFICACION" => $tipo,
-                "IDCURSO" => $idCurso,
-                "BLOQUEO" =>'si'
+                "IDALUMNO"          => $idAlumno,
+                "ANOACADEMICO"      => $ano,
+                "IDASIGNATURA"      => $idAsignatura,
+                "IDCALIFICACION"    => $idCalif,
+                "FECHA"             => $fecha,
+                "NOTAS"             => $calif,
+                "TIPOCALIFICACION"  => $tipo,
+                "IDCURSO"           => $idCurso,
+                "BLOQUEO"           =>'si',
+                "SEMESTRE"          => $semestre
             );
             $this->db->insert('CALIFICACIONES',$datos);   
         }
@@ -641,12 +663,13 @@ class modelo extends CI_Model
         $this->db->where('IDUSUARIO',$idusuario);
         return $this->db->get('ENCARGADOUTP');
     }
-    function guardaFechaCalificacion($ano,$idasignatura,$idcalificacion,$fecha,$ponde,$tipo)
+    function guardaFechaCalificacion($ano,$idasignatura,$idcalificacion,$fecha,$ponde,$tipo,$semestre)
     {
         $this->db->select('*');
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
         $this->db->where('IDCALIFICACION',$idcalificacion);
+        $this->db->where('SEMESTRE',$semestre);
         $query = $this->db->get('FECHACALIFICACION');
         if($query->num_rows()> 0) //implica que solo lo debo editar!
         {
@@ -658,26 +681,29 @@ class modelo extends CI_Model
             $this->db->where('ANOACADEMICO',$ano);
             $this->db->where('IDASIGNATURA',$idasignatura);
             $this->db->where('IDCALIFICACION',$idcalificacion);
+            $this->db->where('SEMESTRE',$semestre);
             $this->db->update('FECHACALIFICACION',$datos);
         }
         else
         {
             $datos = array(
-                "ANOACADEMICO"  =>  $ano,
-                "IDASIGNATURA"  =>  $idasignatura,
-                "IDCALIFICACION"=>  $idcalificacion,
-                "FECHA"         =>  $fecha,
-                "PONDERACION"   =>  $ponde,
-                "TIPOCALIFICACION" => $tipo
+                "ANOACADEMICO"      =>  $ano,
+                "IDASIGNATURA"      =>  $idasignatura,
+                "IDCALIFICACION"    =>  $idcalificacion,
+                "FECHA"             =>  $fecha,
+                "PONDERACION"       =>  $ponde,
+                "TIPOCALIFICACION"  =>  $tipo,
+                "SEMESTRE"          =>  $semestre
             );
             $this->db->insert('FECHACALIFICACION',$datos);
         }
     }
-    function eliminaConfigCalificacion($idEvaluacion,$idAsignatura,$ano)
+    function eliminaConfigCalificacion($idEvaluacion,$idAsignatura,$ano,$semestre)
     {
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idAsignatura);
         $this->db->where('IDCALIFICACION',$idEvaluacion);
+        $this->db->where('SEMESTRE',$semestre);
         $this->db->delete('FECHACALIFICACION');
     }
     function verificaFeriado($fecha)
@@ -685,6 +711,180 @@ class modelo extends CI_Model
         $this->db->select('*');
         $this->db->where('FECHAS',$fecha);
         return $this->db->get('FERIADOS');
+    }
+    function buscaAsignaturasPorCursoAno($ano,$curso,$semestre)
+    {
+        $this->db->select('IDASIGNATURA');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDCURSO',$curso);
+        $this->db->where('SEMESTRE',$semestre);
+        $this->db->distinct();
+        return $this->db->get('CALIFICACIONES');
+    }
+    function buscaCalificacionesPorCursoAno($ano,$curso,$semestre)
+    {
+        $this->db->select('*');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDCURSO',$curso);
+        $this->db->where('SEMESTRE',$semestre);
+        return $this->db->get('CALIFICACIONES');
+    }
+    function cargaFechasCalificacion($ano,$idasignatura,$idcurso,$semestre)
+    {
+        $this->db->select('FECHA');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDCURSO',$idcurso);
+        $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('SEMESTRE',$semestre);
+        $this->db->distinct();
+        return $this->db->get('CALIFICACIONES');
+    }
+    function modificacionCalificacion($ano,$idasignatura,$idalumno,$idcurso,$fecha,$semestre)
+    {
+        //echo $ano.' - '.$idasignatura.' - '.$idalumno.' - '.$idcurso.' - '.$fecha;
+        $datos= array(
+            "BLOQUEO" => 'no'
+        );
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('IDCURSO',$idcurso);
+        $this->db->where('IDALUMNO',$idalumno);
+        $this->db->where('FECHA',$fecha);
+        $this->db->where('SEMESTRE',$semestre);
+        $this->db->update('CALIFICACIONES',$datos);
+    }
+    function buscaEximidos($ano,$idAlumno)
+    {
+        $this->db->select('*');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDALUMNO',$idAlumno);
+        return $this->db->get('ASIGNATURAEXIMIDA');
+    }
+    function buscaEximidosPorAno($ano)
+    {
+        $this->db->select('*');
+        $this->db->where('ANOACADEMICO',$ano);
+        return $this->db->get('ASIGNATURAEXIMIDA');
+    }
+    function guardarEximido($ano,$alumno,$asignatura,$motivo)
+    {
+        $this->db->select('*');
+        $this->db->where('IDALUMNO',$alumno);
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDASIGNATURA',$asignatura);
+        $query = $this->db->get('ASIGNATURAEXIMIDA')->num_rows();
+        if($query==0)
+        {
+            $datos = array(
+                "IDALUMNO"=>$alumno,
+                "ANOACADEMICO"=>$ano,
+                "IDASIGNATURA"=>$asignatura,
+                "MOTIVO"=>$motivo
+            );
+            $this->db->insert('ASIGNATURAEXIMIDA',$datos);
+        }
+    }
+    function eliminarEximido($ano,$alumno,$asignatura)
+    {
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDALUMNO',$alumno);
+        $this->db->where('IDASIGNATURA',$asignatura);
+        $this->db->delete('ASIGNATURAEXIMIDA');
+    }
+    function verificaEximido($ano,$alumno,$asignatura)
+    {
+        $this->db->select('*');
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->where('IDALUMNO',$alumno);
+        $this->db->where('IDASIGNATURA',$asignatura);
+        return $this->db->get('ASIGNATURAEXIMIDA');
+    }
+    function cargaListadoAlumnosConElectivo($ano,$idcurso)
+    {
+        //$eximidos = $this->buscaEximidosPorAno($ano)->result();
+        
+        $this->db->select('ALUMNOS.IDALUMNO, ALUMNOS.NOMBRES, ALUMNOS.APELLIDOP, ALUMNOS.APELLIDOM, ASIGNATURAELECTIVA.IDASIGNATURA');
+        $this->db->from('ALUMNOS');
+        $this->db->join('MATRICULA','MATRICULA.IDALUMNO = ALUMNOS.IDALUMNO');
+        $this->db->where('MATRICULA.ANO',$ano);
+        $this->db->where('MATRICULA.IDCURSO',$idcurso);
+        /*foreach($eximidos as $row):
+            $this->db->where('MATRICULA.IDALUMNO !=',$row->IDALUMNO);
+        endforeach;*/
+        $this->db->join('ASIGNATURAELECTIVA','ASIGNATURAELECTIVA.IDALUMNO = ALUMNOS.IDALUMNO');
+        $this->db->where('ASIGNATURAELECTIVA.ANOACADEMICO',$ano);
+        $this->db->order_by('APELLIDOP','asc');
+        return $this->db->get();
+    }
+    function cargaListadoAlumnosConElectivo2($ano,$idcurso,$idasignatura)
+    {
+        $this->db->select('ALUMNOS.IDALUMNO, ALUMNOS.NOMBRES, ALUMNOS.APELLIDOP, ALUMNOS.APELLIDOM, ASIGNATURAELECTIVA.IDASIGNATURA');
+        $this->db->from('ALUMNOS');
+        $this->db->join('MATRICULA','MATRICULA.IDALUMNO = ALUMNOS.IDALUMNO');
+        $this->db->where('MATRICULA.ANO',$ano);
+        $this->db->where('MATRICULA.IDCURSO',$idcurso);
+        $this->db->join('ASIGNATURAELECTIVA','ASIGNATURAELECTIVA.IDALUMNO = ALUMNOS.IDALUMNO');
+        $this->db->where('ASIGNATURAELECTIVA.ANOACADEMICO',$ano);
+        $this->db->where('ASIGNATURAELECTIVA.IDASIGNATURA',$idasignatura);
+        $this->db->order_by('APELLIDOP','asc');
+        return $this->db->get();
+    }
+    function cargaListadoAlumnosSinElectivo($ano,$idcurso)
+    {
+        $query = $this->cargaListadoAlumnosConElectivo($ano,$idcurso); //Cargo los alumnos Con Electivo
+        $num = $query->num_rows();
+        if($num == 0):
+            return $this->cargaListadoAlumnos($ano, $idcurso);
+        else:
+            $this->db->select('*');
+            $this->db->from('ALUMNOS');
+            $this->db->join('MATRICULA','MATRICULA.IDALUMNO = ALUMNOS.IDALUMNO');
+            $this->db->where('MATRICULA.ANO',$ano);
+            $this->db->where('MATRICULA.IDCURSO',$idcurso);
+            foreach($query->result() as $row):
+                $this->db->where('ALUMNOS.IDALUMNO !=',$row->IDALUMNO);
+            endforeach;
+            $this->db->order_by('APELLIDOP','asc');
+            return $this->db->get();
+        endif;
+    }
+    function cargaAsignaturasElectivas()
+    {
+        $this->db->select('*');
+        $this->db->where('TIPOASIGNATURA',1);
+        return $this->db->get('ASIGNATURA');
+    }
+    function guardarElectivo($alumno,$asignatura,$ano)
+    {
+        $datos = array(
+            "IDASIGNATURA" => $asignatura,
+            "IDALUMNO" => $alumno,
+            "ANOACADEMICO" => $ano
+        );
+        $this->db->insert('ASIGNATURAELECTIVA',$datos);
+    }
+    function modificarElectivo($alumno,$asignatura,$ano)
+    {
+        $datos = array(
+            "IDASIGNATURA" => $asignatura,
+        );
+        $this->db->where('IDALUMNO',$alumno);
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->update('ASIGNATURAELECTIVA',$datos);
+    }
+    function eliminarElectivo($alumno,$asignatura,$ano)
+    {
+        $this->db->where("IDASIGNATURA",$asignatura);
+        $this->db->where('IDALUMNO',$alumno);
+        $this->db->where('ANOACADEMICO',$ano);
+        $this->db->delete('ASIGNATURAELECTIVA');
+    }
+    function buscaAsignaturaElectiva($idasignatura)
+    {
+        $this->db->select('*');
+        $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('TIPOASIGNATURA',1);
+        return $this->db->get('ASIGNATURA');
     }
 }
 ?>

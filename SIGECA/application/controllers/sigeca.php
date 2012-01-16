@@ -49,7 +49,40 @@ class sigeca extends CI_Controller {
         }
         $datos['anios']             =   $this->modelo->buscaAnioConfigUTP()->result();
         $datos['idusuario'] = $idusuario;
+        $ano = DATE('Y');
+        $cursos   = $this->modelo->buscaTodosCursosAsignadosUTP($ano,$this->session->userdata('username'))->result();
+        $i=0;
+        foreach ($cursos as $row):
+            $datos['cursos'.$i] = $this->modelo->buscaDatosCursoPorID($row->IDCURSO)->result();
+            $i++;
+        endforeach;
+        $datos['cantCursos'] = $i;
         $this->load->view('principal',$datos);
+    }
+    function tabs_1()
+    {
+        $idusuario                  =   $this->session->userdata('username');
+        $datos['nombre']            =   $this->modelo->buscaNombreUsuarioPorID($idusuario);
+        $datos['cargo']             =   $this->session->userdata('cargo');
+        $datos['utpCursos'] = 'no';
+        if($datos['cargo'] == '2') //Es UTP... que puede tener CURSOS... por lo que debo ver si debe configurar asignatura!
+        {
+            if($this->modelo->buscaDatosPROFESORCURSOASIGNATURAPorIdProfesor($idusuario)->num_rows() > 0)
+            {
+                $datos['utpCursos'] = 'si';
+            }
+        }
+        $datos['anios']             =   $this->modelo->buscaAnioConfigUTP()->result();
+        $datos['idusuario'] = $idusuario;
+        $ano = DATE('Y');
+        $cursos   = $this->modelo->buscaTodosCursosAsignadosUTP($ano,$this->session->userdata('username'))->result();
+        $i=0;
+        foreach ($cursos as $row):
+            $datos['cursos'.$i] = $this->modelo->buscaDatosCursoPorID($row->IDCURSO)->result();
+            $i++;
+        endforeach;
+        $datos['cantCursos'] = $i;
+        $this->load->view('tabs1',$datos);
     }
     function tabs_3()
     {
@@ -211,7 +244,19 @@ class sigeca extends CI_Controller {
     {
         $idasignatura = $this->generaRandom2();
         $nombre = $this->input->post('nombre');
-        $this->modelo->guardarNuevaAsignatura($idasignatura,$nombre);
+        $calificacion = $this->input->post('calificacion');
+        $electivo = $this->input->post('electivo');
+        if($calificacion == 'Nota')
+           $calificacion=0;
+        else
+            $calificacion=1;
+        if($electivo == 'Si')
+            $electivo=1;
+        else
+            $electivo=0;
+        $this->modelo->guardarNuevaAsignatura($idasignatura,$nombre,$electivo,$calificacion);
+        $datos['asignaturas'] = $this->modelo->buscaTodasAsignatura()->result();
+        $this->load->view('divDatosEditarAsignatura',$datos);
     }
     function cargarDatosEditarCursos()
     {
@@ -239,7 +284,19 @@ class sigeca extends CI_Controller {
     {
         $idasignatura    = $this->input->post('idasignatura');
         $nombre     = $this->input->post('nombre');
-        $this->modelo->guardarEditarAsignatura($idasignatura,$nombre);
+        $calificacion = $this->input->post('calificacion');
+        $electivo = $this->input->post('electivo');
+        if($calificacion == 'Nota')
+           $calificacion=0;
+        else
+            $calificacion=1;
+        if($electivo == 'Si')
+            $electivo=1;
+        else
+            $electivo=0;
+        $this->modelo->guardarEditarAsignatura($idasignatura,$nombre,$electivo,$calificacion);
+        $datos['asignaturas'] = $this->modelo->buscaTodasAsignatura()->result();
+        $this->load->view('divDatosEditarAsignatura',$datos);
     }
     function generaRandom()
     {
@@ -314,6 +371,10 @@ class sigeca extends CI_Controller {
         $fNacimiento = $this->convierteFecha1($fNacimiento);
         //echo $fNacimiento;
         $this->modelo->guardarNuevoProfesor($rut,$digito,$nombres,$aPaterno,$aMaterno,$direccion,$telefono,$prevision,$AFP,$titulo,$mension,$fNacimiento);
+        $profesores = $this->modelo->buscaTodosProfesores();
+        $datos['cantProfesores'] = $profesores->num_rows();
+        $datos['profesores'] = $profesores->result();
+        $this->load->view('divCrearProfesor',$datos);
     }
     function convierteFecha1($fecha) //convierte de 11-01-2011 a -> 11-Jun-2011
     {
@@ -409,7 +470,7 @@ class sigeca extends CI_Controller {
     function guardaNuevoAnoAcademico()
     {
         $ano = $this->input->post('ano');
-        $this->modelo->guardaConfigAnoAcademico($ano,'01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00');
+        $this->modelo->guardaConfigAnoAcademico($ano,'01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00');
         $anios = $this->modelo->buscaAnioConfigUTP()->result();
         foreach ($anios as $row):
             $data['ultimoAno'] = $row->ANOACADEMICO;
@@ -421,7 +482,7 @@ class sigeca extends CI_Controller {
         //Creo el ano académico si es que no se encuentra creado
         $ano = $this->input->post('ano');
         if($this->modelo->buscaConfigAnoAcademico($ano)->num_rows()==0):
-            $this->modelo->guardaConfigAnoAcademico($ano,'01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00');
+            $this->modelo->guardaConfigAnoAcademico($ano,'01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00','01-JAN-00');
             $datos['bandera'] = 0;
             $datos['cantFeriados']=0;
         else:
@@ -675,8 +736,14 @@ class sigeca extends CI_Controller {
         $idcurso = $this->input->post('curso');
         $idprofesor = $this->session->userdata('username');
         $idasignatura = $this->input->post('asignatura');
-                
-        $alumnos = $this->modelo->cargaListadoAlumnos($ano,$idcurso);
+        $electivo = $this->modelo->buscaAsignaturaElectiva($idasignatura)->num_rows();
+        
+        if($electivo > 0):
+            $alumnos = $this->modelo->cargaListadoAlumnosConElectivo2($ano,$idcurso,$idasignatura);
+        else:
+            $alumnos = $this->modelo->cargaListadoAlumnos($ano,$idcurso);
+        endif;
+        
         $datos['largo'] = $alumnos->num_rows();
         $datos['alumnos'] = $alumnos->result();
         $datos['datosCalificacion'] = $this->modelo->buscaDatosCalificacion($idasignatura,$ano)->result();
@@ -685,7 +752,8 @@ class sigeca extends CI_Controller {
         foreach ($alumnos->result() as $row1):
             $j=0;
             foreach($datos['datosCalificacion'] as $row):
-                $notas = $this->modelo->buscaNota($row1->IDALUMNO,$ano,$idasignatura,$row->IDCALIFICACION);
+                $semestre=$this->semestre(strtotime(DATE('d-m-Y')));
+                $notas = $this->modelo->buscaNota($row1->IDALUMNO,$ano,$idasignatura,$row->IDCALIFICACION,$semestre);
                 if($notas->num_rows() > 0):
                     $datos['cantNota'.$i.$j] = '1';
                     $datos['nota'.$i.$j] = $notas->result();
@@ -720,18 +788,19 @@ class sigeca extends CI_Controller {
         $promedio[$j] = 0;
         $verPonde = 'si';
         foreach($datos['alumnos'] as $row):
-            $notas = $this->modelo->buscaNota2($row->IDALUMNO,$ano,$idasignatura);
+            $semestre=$this->semestre(strtotime(DATE('d-m-Y')));
+            $notas = $this->modelo->buscaNota2($row->IDALUMNO,$ano,$idasignatura,$semestre);
             $cantNotas = $notas->num_rows();
             $notas = $notas->result();
             $i=0;
             $suma=0;
             if($orden<6){
-                $cantC2 = $this->modelo->buscaCalifC2($ano,$idasignatura,"C/2",$row->IDALUMNO);
+                $cantC2 = $this->modelo->buscaCalifC2($ano,$idasignatura,"C/2",$row->IDALUMNO,$semestre);
                 $cantNotas = $cantNotas + $cantC2->num_rows();
                 $verPonde='no';
                 foreach($notas as $row1):
                     $ponderacion[$i] = 100/$cantNotas;
-                    $notaC2 = $this->modelo->buscaCalifC2porIDCalificacion($ano,$idasignatura,$row1->IDCALIFICACION)->num_rows();
+                    $notaC2 = $this->modelo->buscaCalifC2porIDCalificacion($ano,$idasignatura,$row1->IDCALIFICACION,$semestre)->num_rows();
                     if($notaC2 > 0)
                         $nota[$i] = ($row1->NOTAS)*2;
                     else
@@ -741,7 +810,7 @@ class sigeca extends CI_Controller {
             }
             else{
                 foreach($notas as $row1):
-                    $ponderaciones = $this->modelo->buscaPonderacionNotas($ano,$idasignatura,$row1->IDCALIFICACION);
+                    $ponderaciones = $this->modelo->buscaPonderacionNotas($ano,$idasignatura,$row1->IDCALIFICACION,$semestre);
                     foreach($ponderaciones as $row2):
                         $ponderacion[$i] = $row2->PONDERACION;
                         $suma = $suma + $row2->PONDERACION;
@@ -755,9 +824,9 @@ class sigeca extends CI_Controller {
                 $promedio = $promedio + $nota[$k]*$ponderacion[$k]/100;
             endfor;
             if($suma!=0)
-                $datos['promedio'.$j] = $promedio/($suma/100);
+                $datos['promedio'.$j] = round($promedio/($suma/100));
             else
-                $datos['promedio'.$j] = $promedio;
+                $datos['promedio'.$j] = round($promedio);
             $j++;
         endforeach;
         $datos['verPonde'] = $verPonde;
@@ -774,13 +843,13 @@ class sigeca extends CI_Controller {
         $fecha = DATE('d-M-Y');
         $fecha = $this->convierteFecha2($fecha);
         $fecha = $this->convierteFecha1($fecha);
-        
-        $tipo = $this->modelo->buscaFechaCalificacion($ano,$idAsignatura,$idCalif);
+        $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
+        $tipo = $this->modelo->buscaFechaCalificacion($ano,$idAsignatura,$idCalif,$semestre);
         foreach($tipo->result() as $row):
             $tipo = $row->TIPOCALIFICACION;
         endforeach;
         
-        $this->modelo->almacenarCalificaciones($idAlumno,$ano,$idAsignatura,$idCalif,$fecha,$calif,$idCurso,$tipo);
+        $this->modelo->almacenarCalificaciones($idAlumno,$ano,$idAsignatura,$idCalif,$fecha,$calif,$idCurso,$tipo,$semestre);
     }
     function cargaConfigurarAsignatura()
     {
@@ -788,9 +857,10 @@ class sigeca extends CI_Controller {
         $nombreAsignatura = $this->input->post('nombreAsignatura');
         $idAsignatura = $this->input->post('idAsignatura');
         $ano = DATE('Y');
-        $fechaCalificacion = $this->modelo->buscaFechaCalificacion2($ano,$idAsignatura);
-        $datos['ponderacion'] = 'si';
-        if($ordenCurso<6) //Desde 4º básico hacia atrás!
+        $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
+        $fechaCalificacion = $this->modelo->buscaFechaCalificacion2($ano,$idAsignatura,$semestre);
+        $datos['ponderacion'] = 'si'; //7º en adelante es con Ponderaciones
+        if($ordenCurso<8) //Desde 6º básico hacia atrás no tiene ponderaciones!
             $datos['ponderacion'] = 'no';
         
         $fecha1 = DATE('d-M-Y');
@@ -837,12 +907,13 @@ class sigeca extends CI_Controller {
         $fecha1 = strtotime($this->convierteFecha2($fecha1));
         $fecha2 = $fecha;
         $fecha = strtotime($fecha);
+        $semestre = $this->semestre($fecha);
         $calificaciones = $this->modelo->buscaNota3($ano,$idasignatura,$idcalificacion )->num_rows();
         //La nueva fecha debe ser mayor 0 igual a la fecha de hoy y la evaluación no ha sido registrada! (tabla calificaciones)
         if($fecha1<=$fecha && $calificaciones == 0)
         {
             $fecha = $this->convierteFecha1($fecha2);
-            $this->modelo->guardaFechaCalificacion($ano,$idasignatura,$idcalificacion,$fecha,$ponde,$tipo);   
+            $this->modelo->guardaFechaCalificacion($ano,$idasignatura,$idcalificacion,$fecha,$ponde,$tipo,$semestre);   
         }
     }
     function eliminaConfigCalificacion()
@@ -850,24 +921,340 @@ class sigeca extends CI_Controller {
         $idEvaluacion = $this->input->post('idEvaluacion');
         $idAsignatura = $this->input->post('idAsignatura');
         $ano = DATE('Y');
-        $this->modelo->eliminaConfigCalificacion($idEvaluacion,$idAsignatura,$ano);
+        $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
+        $this->modelo->eliminaConfigCalificacion($idEvaluacion,$idAsignatura,$ano,$semestre);
     }
-    function verificaFeriado()
+    function semestre($fecha)
     {
-        $fecha = $this->input->post('fecha');
-        $fecha = $this->convierteFecha1($fecha);
-        $msj = 'no';
-        $tipo = null;
+        $fechas = $this->modelo->buscaConfigAnoAcademico(DATE('Y'))->result();
+        foreach($fechas as $row):
+            $inicioPS   = strtotime($this->convierteFecha2($row->FECHAINICIOPS));
+            $finPS      = strtotime($this->convierteFecha2($row->FECHAFINPS));
+            $inicioSS   = strtotime($this->convierteFecha2($row->FECHAINICIOSS));
+            $finSS      = strtotime($this->convierteFecha2($row->FECHAFINSS));
+        endforeach;
+        $semestre=0;
+        if($fecha >= $inicioPS && $fecha <= $finPS)
+            $semestre =1;
+        else
+            if($fecha >= $inicioSS && $fecha <= $finSS)
+                $semestre=2;
+        return $semestre;
+    }
+    function verificaFeriadoySemestres()
+    {
+        $fecha  = $this->input->post('fecha');
+        $orden  = $this->input->post('orden');
+        $fecha1  = $this->convierteFecha1($fecha);
+        $msj    = 'no';
+        $tipo   = null;
+        $leyenda = '';
+
+        $fecha = strtotime($fecha);
+        $fechas = $this->modelo->buscaConfigAnoAcademico(DATE('Y'))->result();
+        foreach($fechas as $row):
+            $finS4      = strtotime($this->convierteFecha2($row->FECHAFINS4));
+        endforeach;
+        $msj='no';
+        $leyenda='';
+        if($fecha>$finS4 && $orden == 13)
+        {
+            $msj='si';
+            $leyenda='Fecha fuera del segundo semestre de 4º Medio';
+        }
+        $fecha2 = DATE('d-M-Y');
+        $fecha2 = strtotime($this->convierteFecha2($fecha2));
+        $semestreA = $this->semestre($fecha2);
+        $semestreS = $this->semestre($fecha);
         
-        if($this->modelo->verificaFeriado($fecha)->num_rows() > 0) //Existe la fecha como feriado!
+        if($semestreA == 0 && $msj=='no')
+        {
+            $msj='si';
+            $leyenda='Aun no comienza un semestre académico';
+        }
+        else{
+            if($semestreS == 0 && $msj=='no')
+            {
+                $msj='si';
+                $leyenda='Fecha fuera de un semestre académico';
+            }
+            else{
+                if($semestreA != $semestreS && $msj=='no')
+                {
+                    $msj='si';
+                    $leyenda = 'Fecha fuera del semestre en curso';
+                }
+            }
+        }
+
+        if($this->modelo->verificaFeriado($fecha1)->num_rows() > 0 && $msj =='no') //Existe la fecha como feriado!
         {
             $msj = 'si';
-            foreach($this->modelo->verificaFeriado($fecha)->result() as $row):
+            foreach($this->modelo->verificaFeriado($fecha1)->result() as $row):
                 $tipo = $row->MOTIVO;
             endforeach;
+            $leyenda = 'Fecha seleccionada es feriado por '.$tipo;
         }
+        echo json_encode(array('msj'=>$msj,'leyenda'=>$leyenda));
+    }
+    function modificarCalificacion()
+    {
+        $curso = $this->input->post('curso');
+        $ano = DATE('Y');
         
-        echo json_encode(array('msj'=>$msj,'tipo'=>$tipo));
+        $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
+        $asignaturas = $this->modelo->buscaAsignaturasPorCursoAno($ano,$curso,$semestre)->result();
         
+        $i=0;
+        foreach($asignaturas as $row):
+            $datos['asignatura'.$i] = $this->modelo->buscaDatosAsignaturaPorID($row->IDASIGNATURA)->result();
+            $i++;
+        endforeach;
+        $datos['cantAsignaturas'] = $i;
+        
+        $datos['alumnos'] = $this->modelo->cargaListadoAlumnos($ano,$curso)->result();
+        
+        $this->load->view('divModificarCalificacion',$datos);
+    }
+    function cargaFechasCalificacion()
+    {
+        $idasignatura = $this->input->post('idasignatura');
+        $idcurso = $this->input->post('idcurso');
+        $ano = DATE('Y');
+        $semestre=$this->semestre(strtotime(DATE('d-m-Y')));
+        $datos['fechas'] = $this->modelo->cargaFechasCalificacion($ano,$idasignatura,$idcurso,$semestre)->result();
+        $this->load->view('cargarFechasModifCalif',$datos);
+    }
+    function modificacionCalificacion()
+    {   
+        $idasignatura = $this->input->post('idasignatura');
+        $idcurso = $this->input->post('idcurso');
+        $idalumno = str_replace(" ","",$this->input->post('idalumno'));
+        $fecha = $this->input->post('fecha');
+        $ano = DATE('Y');
+        if($idalumno == "Todos")
+        {
+            $alumnos = $this->modelo->cargaListadoAlumnos($ano,$idcurso)->result();
+            $semestre=$this->semestre(strtotime($fecha));
+            foreach($alumnos as $row):
+                $this->modelo->modificacionCalificacion($ano,$idasignatura,$row->IDALUMNO,$idcurso,$fecha,$semestre);
+            endforeach;
+        }
+        else
+        {
+            $this->modelo->modificacionCalificacion($ano,$idasignatura,$idalumno,$idcurso,$fecha);
+        }
+    }
+    function tabs_Curso()
+    {
+        $idusuario  =   $this->session->userdata('username');
+        $ano = DATE('Y');        
+        //Buscar cuantos cursos tiene a su cargo
+        $cursos = $this->modelo->buscaCursosProfesorGuia($ano,$idusuario);
+        $i=0;
+        foreach($cursos->result() as $row):
+            $datos['datosCurso'.$i] = $this->modelo->buscaDatosCursoPorID($row->IDCURSO)->result();
+            $i++;
+        endforeach;
+        $datos['cantCursos']=$i;
+        
+        //Buscar si es jefe de algún 3º o 4º medio
+        $datos['electivo'] = 'no';
+        $j=0;
+        if($i==1): //Solo tiene un curso
+            foreach ($datos['datosCurso0'] as $row):
+                if($row->ORDEN == 12 || $row->ORDEN == 13):
+                    $datos['electivo'] = 'si';
+                    //Si tiene electivos busco la lista del curso y la lista de los ya asignados
+                    $alumnosConElectivos = $this->modelo->cargaListadoAlumnosConElectivo($ano,$row->IDCURSO);
+                    $datos['cantElectivosAsignados'] = $alumnosConElectivos->num_rows();
+                    $datos['alumnosConElectivos'] = $alumnosConElectivos->result();
+                    $datos['alumnosSinElectivos'] = $this->modelo->cargaListadoAlumnosSinElectivo($ano,$row->IDCURSO)->result();
+                    $datos['asignaturasElectivas'] = $this->modelo->cargaAsignaturasElectivas()->result();
+                endif;
+                $asignaturasCurso = $this->modelo->buscaprofesorCursoAsignatura($ano,$row->IDCURSO)->result();
+                foreach($asignaturasCurso as $row1):
+                    $datos['asignaturasCurso'.$j] = $this->modelo->buscaDatosAsignaturaPorID($row1->IDASIGNATURA)->result();
+                    $j++;
+                endforeach;
+                $datos['idCurso']=$row->IDCURSO;
+                $datos['alumnos'] = $this->modelo->cargaListadoAlumnos($ano,$row->IDCURSO)->result();
+                $datos['cantAsignaturas']=$j;
+
+                //Busca los alumnos ya Eximidos
+                $j=0;
+                foreach($datos['alumnos'] as $row1):
+                    $eximidos = $this->modelo->buscaEximidos($ano,$row1->IDALUMNO);
+                    if($eximidos->num_rows()>0):
+                        foreach($eximidos->result() as $row2):
+                            $datos['motivo'.$j] = $row2->MOTIVO;
+                            $datos['alumnoEximido'.$j] = $this->modelo->buscaAlumnosPorID($row2->IDALUMNO)->result();
+                            $datos['asignaturaEximida'.$j] = $this->modelo->buscaDatosAsignaturaPorID($row2->IDASIGNATURA)->result();
+                            $j++;
+                        endforeach;
+                    endif;
+                endforeach;
+                $datos['cantEximidos']=$j;
+            endforeach;
+        endif;
+        
+        $this->load->view('tabs_Curso',$datos);
+    }
+    function guardarEximido(){
+        
+        $alumno = $this->input->post('alumno');
+        $asignatura = $this->input->post('asignatura');
+        $motivo = $this->input->post('motivo');
+        $curso = $this->input->post('curso');
+        $ano = DATE('Y');
+        $this->modelo->guardarEximido($ano,$alumno,$asignatura,$motivo);
+        
+        $datos['alumnos'] = $this->modelo->cargaListadoAlumnos($ano,$curso)->result();
+        $j=0;
+        foreach($datos['alumnos'] as $row1):
+            $eximidos = $this->modelo->buscaEximidos($ano,$row1->IDALUMNO);
+            if($eximidos->num_rows()>0):
+                foreach($eximidos->result() as $row2):
+                    $datos['motivo'.$j] = $row2->MOTIVO;
+                    $datos['alumnoEximido'.$j] = $this->modelo->buscaAlumnosPorID($row2->IDALUMNO)->result();
+                    $datos['asignaturaEximida'.$j] = $this->modelo->buscaDatosAsignaturaPorID($row2->IDASIGNATURA)->result();
+                    $j++;
+                endforeach;
+            endif;
+        endforeach;
+        $datos['cantEximidos']=$j;
+
+        $this->load->view('divTablaEximidos',$datos);
+    }
+    function eliminarEximido()
+    {
+        $alumno = $this->input->post('alumno');
+        $asignatura = $this->input->post('asignatura');
+        $curso = $this->input->post('curso');
+        $ano  = DATE('Y');
+        
+        $this->modelo->eliminarEximido($ano,$alumno,$asignatura);
+        
+        $datos['alumnos'] = $this->modelo->cargaListadoAlumnos($ano,$curso)->result();
+        $j=0;
+        foreach($datos['alumnos'] as $row1):
+            $eximidos = $this->modelo->buscaEximidos($ano,$row1->IDALUMNO);
+            if($eximidos->num_rows()>0):
+                foreach($eximidos->result() as $row2):
+                    $datos['motivo'.$j] = $row2->MOTIVO;
+                    $datos['alumnoEximido'.$j] = $this->modelo->buscaAlumnosPorID($row2->IDALUMNO)->result();
+                    $datos['asignaturaEximida'.$j] = $this->modelo->buscaDatosAsignaturaPorID($row2->IDASIGNATURA)->result();
+                    $j++;
+                endforeach;
+            endif;
+        endforeach;
+        $datos['cantEximidos']=$j;
+        
+        $this->load->view('divTablaEximidos',$datos);
+    }
+    function verificaEximido(){
+        $alumno = $this->input->post('alumno');
+        $asignatura = $this->input->post('asignatura');
+        $ano = DATE('Y');
+        $msj = 'si';
+        $eximido = $this->modelo->verificaEximido($ano,$alumno,$asignatura)->num_rows();
+        if($eximido == 0)
+            $msj = 'no';
+        echo json_encode(array("msj"=>$msj));
+    }
+    function cargaCursoEspecifico()
+    {
+        $curso = $this->input->post('curso');
+        $idusuario  =   $this->session->userdata('username');
+        $ano = DATE('Y');        
+        //Buscar cuantos cursos tiene a su cargo
+        
+        $datos['datosCurso0'] = $this->modelo->buscaDatosCursoPorID($curso)->result();
+        
+        //Buscar si es jefe de algún 3º o 4º medio
+        $datos['electivo'] = 'no';
+        $j=0;$i=0;
+        foreach ($datos['datosCurso0'] as $row):
+            if($row->ORDEN == 12 || $row->ORDEN == 13):
+                $datos['electivo'] = 'si';
+                //Si tiene electivos busco la lista del curso y la lista de los ya asignados
+                $alumnosConElectivos = $this->modelo->cargaListadoAlumnosConElectivo($ano,$row->IDCURSO);
+                $k=0;
+                foreach($alumnosConElectivos->result() as $row1):
+                    $datos['asignaturaAsignada'.$k] = $this->modelo->buscaDatosAsignaturaPorID($row1->IDASIGNATURA)->result();
+                    $k++;
+                endforeach;
+                $datos['cantElectivosAsignados'] = $alumnosConElectivos->num_rows();
+                $datos['alumnosConElectivos'] = $alumnosConElectivos->result();
+                $datos['alumnosSinElectivos'] = $this->modelo->cargaListadoAlumnosSinElectivo($ano,$row->IDCURSO)->result();
+                $datos['asignaturasElectivas'] = $this->modelo->cargaAsignaturasElectivas()->result();
+            endif;
+            $asignaturasCurso = $this->modelo->buscaprofesorCursoAsignatura($ano,$row->IDCURSO)->result();
+            foreach($asignaturasCurso as $row1):
+                $datos['asignaturasCurso'.$j] = $this->modelo->buscaDatosAsignaturaPorID($row1->IDASIGNATURA)->result();
+                $j++;
+            endforeach;
+            $datos['idCurso']=$row->IDCURSO;
+            $datos['alumnos'] = $this->modelo->cargaListadoAlumnos($ano,$row->IDCURSO)->result();
+            $datos['cantAsignaturas']=$j;
+
+            //Busca los alumnos ya Eximidos
+            $j=0;
+            foreach($datos['alumnos'] as $row1):
+                $eximidos = $this->modelo->buscaEximidos($ano,$row1->IDALUMNO);
+                if($eximidos->num_rows()>0):
+                    foreach($eximidos->result() as $row2):
+                        $datos['motivo'.$j] = $row2->MOTIVO;
+                        $datos['alumnoEximido'.$j] = $this->modelo->buscaAlumnosPorID($row2->IDALUMNO)->result();
+                        $datos['asignaturaEximida'.$j] = $this->modelo->buscaDatosAsignaturaPorID($row2->IDASIGNATURA)->result();
+                        $j++;
+                    endforeach;
+                endif;
+            endforeach;
+            $datos['cantEximidos']=$j;
+        endforeach;
+        $datos['curso'] = $curso;
+        $this->load->view('tabs_Curso2',$datos);
+    }
+    function guardarElectivo()
+    {
+        $alumno  = $this->input->post('alumno');
+        $asignatura = $this->input->post('asignatura');
+        $curso = $this->input->post('curso');
+        $ano = DATE('Y');
+        $this->modelo->guardarElectivo($alumno,$asignatura,$ano);
+        $this->cargaTablaElectivos($ano,$curso);
+    }
+    function modificarElectivo()
+    {
+        $alumno  = $this->input->post('alumno');
+        $asignatura = $this->input->post('asignatura');
+        $curso = $this->input->post('curso');
+        $ano = DATE('Y');
+        $this->modelo->modificarElectivo($alumno,$asignatura,$ano);
+        $this->cargaTablaElectivos($ano,$curso);
+    }
+    function eliminarElectivo()
+    {
+        $alumno  = $this->input->post('alumno');
+        $asignatura = $this->input->post('asignatura');
+        $curso = $this->input->post('curso');
+        $ano = DATE('Y');
+        $this->modelo->eliminarElectivo($alumno,$asignatura,$ano);
+        $this->cargaTablaElectivos($ano,$curso);
+    }
+    function cargaTablaElectivos($ano,$curso)
+    {
+        $alumnosConElectivos = $this->modelo->cargaListadoAlumnosConElectivo($ano,$curso);
+        $k=0;
+        foreach($alumnosConElectivos->result() as $row1):
+            $datos['asignaturaAsignada'.$k] = $this->modelo->buscaDatosAsignaturaPorID($row1->IDASIGNATURA)->result();
+            $k++;
+        endforeach;
+        $datos['cantElectivosAsignados'] = $alumnosConElectivos->num_rows();
+        $datos['alumnosConElectivos'] = $alumnosConElectivos->result();
+        $datos['alumnosSinElectivos'] = $this->modelo->cargaListadoAlumnosSinElectivo($ano,$curso)->result();
+        $datos['asignaturasElectivas'] = $this->modelo->cargaAsignaturasElectivas()->result();
+        $this->load->view('divTablaElectivos',$datos);
     }
 }

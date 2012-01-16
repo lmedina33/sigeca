@@ -5,7 +5,7 @@ function funcionesInicio()
     //Acordiones
         $("#accordionACA").accordion({collapsible: true});
         $("#accordionINF").accordion({collapsible: true});
-        $("#accordionUTP2").accordion({collapsible: true});
+        
     
     //Botones
         $("#generarInformeNotasParciales").button();
@@ -15,52 +15,7 @@ function funcionesInicio()
     //Tabs    
         $("#tabs").tabs();
         
-    $("#seleccionAnoAcademico").change(
-        function(){
-            if($("#seleccionAnoAcademico").val()!=''){
-            $.ajax({
-                url:base_url+'sigeca/cargaConfigAnoAcademico',
-                data:{ano:$("#seleccionAnoAcademico").val()},
-                type:"POST",
-                cache:false,
-                success:
-                    function(htmlresponse,data){
-                        $("#anoAcademicoSeleccionado").html(htmlresponse,data);
-                        $.ajax({
-                            url:base_url+'sigeca/cargaTabs1_1',
-                            data:{ano:$("#seleccionAnoAcademico").val(),idutp:$("#idUTP").val()},
-                            type:"POST",
-                            cache:false,
-                            success:
-                                function(htmlresponse,data){
-                                    $("#tabs-1-1").html(htmlresponse,data);
-                                } 
-                        });
-                        $.ajax({
-                            url:base_url+'sigeca/cargaTabs1_12',
-                            data:{ano:$("#seleccionAnoAcademico").val(),idutp:$("#idUTP").val()},
-                            type:"POST",
-                            cache:false,
-                            success:
-                                function(htmlresponse,data){
-                                    $("#tablaPlanificacionCurso").html(htmlresponse,data);
-                                } 
-                        });
-                        $.ajax({
-                            url:base_url+'sigeca/cargaTabs1_2',
-                            data:{ano:$("#seleccionAnoAcademico").val()},
-                            type:"POST",
-                            cache:false,
-                            success:
-                                function(htmlresponse,data){
-                                    $("#tabs-1-2").html(htmlresponse,data);
-                                } 
-                        });
-                    }
-            });
-        }
-        }
-    );
+    
 }
 function updateTips( t ) {
     tips
@@ -166,10 +121,12 @@ function validaAnoAcademico(selcalendario,boton){
         return 0;
     }
 }
-function validaAnoAcademico1(selcalendario){    
+function validaAnoAcademico1(selcalendario){
     var ano = new Date();
     var dia1 = parseInt($(selcalendario).val().substr(0,2));
     var mes1 = parseInt($(selcalendario).val().substr(3,2));
+    if(mes1==0)
+        mes1 = parseInt($(selcalendario).val().substr(4,3));
     var ano1 = parseInt($(selcalendario).val().substr(6));
     var dia2 = parseInt(ano.getDate());
     var mes2 = parseInt(ano.getMonth())+1;
@@ -187,7 +144,7 @@ function validaAnoAcademico1(selcalendario){
     }
     else
     {
-        if(dia1<dia2 || mes1<mes2 || ano1<ano2)
+        if(ano1<ano2)
         {
             $(selcalendario).val('');
             $(selcalendario).addClass("ui-state-error ui-state-highlight");
@@ -196,30 +153,54 @@ function validaAnoAcademico1(selcalendario){
         }
         else
         {
-            if(selcalendario != "#feriadosCal"){
-                $.post(base_url+'sigeca/verificaFeriado',
-                    {fecha:$(selcalendario).val()},
-                    function(data){
-                        if(data.msj == 'si') //es feriado
-                        {
-                            $(selcalendario).val('');
-                            $(selcalendario).addClass("ui-state-error ui-state-highlight");
-                            updateTips('Fecha seleccionada es feriado por: '+data.tipo);
-                            return 1;
-                        }
-                        else //no es feriado
-                        {
-                            $( ".validateTips" ).css('display','none');
-                            $(selcalendario).removeClass("ui-state-error ui-state-highlight");
-                            return 0;
-                        }
-                    },"json");
+            if(mes1<mes2 && ano1==ano2)
+            {
+                $(selcalendario).val('');
+                $(selcalendario).addClass("ui-state-error ui-state-highlight");
+                updateTips('Imposible configurar en una fecha posterior!');
+                return 1;
             }
-            return 0;
-            /*$( ".validateTips" ).css('display','none');
-            $(selcalendario).removeClass("ui-state-error ui-state-highlight");
-            return 0;*/
-        }            
+            else
+            {
+                if(dia1<dia2 && mes1==mes2 && ano1==ano2)
+                {
+                    $(selcalendario).val('');
+                    $(selcalendario).addClass("ui-state-error ui-state-highlight");
+                    updateTips('Imposible configurar en una fecha posterior!');
+                    return 1;
+                }
+                else
+                {
+                    if(selcalendario != "#feriadosCal"){
+                        $.post(base_url+'sigeca/verificaFeriadoySemestres',
+                            {fecha:$(selcalendario).val(),orden:parseInt($("#ordenCurso").val())},
+                            function(data){
+                                if(data.msj == 'si') //es feriado
+                                {
+                                    $(selcalendario).val('');
+                                    $(selcalendario).addClass("ui-state-error ui-state-highlight");
+                                    updateTips(data.leyenda);
+                                    return 1;
+                                }
+                                else //no es feriado
+                                {
+                                    $( ".validateTips" ).css('display','none');
+                                    $(selcalendario).removeClass("ui-state-error ui-state-highlight");
+                                    return 0;
+
+                                }
+                            },"json");
+                    }
+                    else
+                        return 0;
+                    
+                    
+                    /*$( ".validateTips" ).css('display','none');
+                    $(selcalendario).removeClass("ui-state-error ui-state-highlight");
+                    return 0;*/
+                }
+            }
+        }                    
     }
 }
 function eliminaFilaTabla()
@@ -263,4 +244,122 @@ function validaFormatoNota(nota)
         //$("#"+nota).focus();
         
     }
+}
+function modificarElectivo(electivo)
+{
+    $("#msjElectivo").hide();
+    $.post(base_url+'sigeca/verificaEximido',{
+        alumno      :$("#alumnosConElectivo"+electivo).val(),
+        asignatura  :$("#asignaturasElectivas"+electivo).val()},
+        function(data){
+            if(data.msj=='no'){
+                $.post(base_url+'sigeca/modificarElectivo',
+                    {
+                        alumno      :$("#alumnosConElectivo"+electivo).val(),
+                        asignatura  :$("#asignaturasElectivas"+electivo).val(),
+                        curso       :$("#curso").val()
+                    },
+                    function(htmlresponse,data){
+                        $('#divAsignarElectivos').html(htmlresponse,data);
+                    }
+                );
+            }
+            else{
+                $("#msjElectivo").html('<label>El alumno está eximido del Curso Seleccionado!</label>');
+                $("#msjElectivo").show();
+                $("#divAsignarElectivos").css('height','auto');
+            }
+        },"json");
+}
+function eliminaElectivo(electivo)
+{
+    $.post(base_url+'sigeca/eliminarElectivo',
+        {
+            alumno      :$("#alumnosConElectivo"+electivo).val(),
+            asignatura  :$("#asignaturasElectivas"+electivo).val(),
+            curso       :$("#curso").val()
+        },
+        function(htmlresponse,data){
+            var tabla = document.getElementById('tablaElectivos');
+            if(tabla.rows.length==1)
+                $("#tablaElectivos").hide();
+            $('#divAsignarElectivos').html(htmlresponse,data);
+            $("#divAsignarElectivos").css('height','auto');
+        }
+    );
+}
+function eliminaEximido(eximido)
+{
+    $.post(base_url+'sigeca/eliminarEximido',
+        {
+            alumno      :$("#eliminarAlumno"+eximido).val(),
+            asignatura  :$("#eliminarAsignatura"+eximido).val(),
+            curso       :$("#curso").val()
+        },
+        function(htmlresponse,data){
+            $('#tablaEximidos').html(htmlresponse,data);
+            var tabla = document.getElementById('tablaEximido');
+            if(tabla.rows.length==1)
+                $("#tablaEximido").hide();
+        }
+    );
+}
+function asignarElectivo(){
+    if($("#alumnosSinElectivo").val() != '' && $("#asignaturasElectivas").val() != '')
+    {
+        $("#msjElectivo").hide();
+        $.post(base_url+'sigeca/verificaEximido',{
+            alumno      :$("#alumnosSinElectivo").val(),
+            asignatura  :$("#asignaturasElectivas").val()},
+            function(data){
+                if(data.msj=='no'){
+                    $.post(base_url+'sigeca/guardarElectivo',
+                        {
+                            alumno      :$("#alumnosSinElectivo").val(),
+                            asignatura  :$("#asignaturasElectivas").val(),
+                            curso       :$("#curso").val()
+                        },
+                        function(htmlresponse,data){
+                            $("#divAsignarElectivos").html(htmlresponse,data);
+                            $("#divAsignarElectivos").css('height','auto');
+                            $("#alumnosSinElectivo").val('');
+                            $("#asignaturasElectivas").val('');
+                        }
+                    );
+                }
+                else{
+                    $("#msjElectivo").html('<label>El alumno está eximido del Curso Seleccionado!</label>');
+                    $("#msjElectivo").show();
+                    $("#divAsignarElectivos").css('height','auto');
+                }
+            },"json");
+    }
+    else{
+        $("#msjElectivo").html('<label>Debe Completar Todos los Campos</label>');
+        $("#msjElectivo").show();
+    }
+}
+function eximirAlumnos(){
+    if($("#listadoAlumnos").val() != '' && $("#asignaturasCurso").val() != '' && $("#motivo").val()!='')
+    {
+        $("#msjEximir").hide();
+        $.post(base_url+'sigeca/guardarEximido',
+            {
+                alumno      :$("#listadoAlumnos").val(),
+                asignatura  :$("#asignaturasCurso").val(),
+                motivo      :$("#motivo").val(),
+                curso       :$("#curso").val()
+            },
+            function(htmlresponse,data){
+                $("#tablaEximidos").html(htmlresponse,data);
+                $("#listadoAlumnos").val('');
+                $("#asignaturasCurso").val('');
+                $("#motivo").val('');
+            }
+        );
+    }
+    else{
+        $("#msjEximir").html('<label>Debe Completar Todos los Campos</label>');
+        $("#msjEximir").show();
+        }
 }
