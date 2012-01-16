@@ -16,13 +16,8 @@
     <tr>
         <td><label>Selecione Alumno:</label></td>
         <td>
-            <select class="ui-corner-all ancho150" id="alumnoModCal">
-                <option selected></option>
-                <?foreach($alumnos as $row):?>
-                    <option value="<?=$row->IDALUMNO;?>"><?=$row->APELLIDOP.' '.$row->APELLIDOM.' '.$row->NOMBRES;?></option>
-                <?endforeach;?>
-                <option value="Todos">Todos</option>
-            </select>
+            <div id="seleccionAlumno">
+            </div>
         </td>
     </tr>
     <tr>
@@ -49,6 +44,15 @@
         else{
             $("#msjMod").html('<label>Debe Seleccionar: Curso, Asignatura y Alumno</label>');
             $("#msjMod").show();
+        }
+    });
+    $("#asignaturaModCal").change(function(){
+        if($("#asignaturaModCal").val() != ''){
+            $.post(base_url+'sigeca/cargaAlumnosAsignatura',{asignatura:$("#asignaturaModCal").val(),curso:$("#cursoModCal").val()},
+                function(htmlresponse,data){
+                    $("#seleccionAlumno").html(htmlresponse,data);
+                }
+            );
         }
     });
 </script>

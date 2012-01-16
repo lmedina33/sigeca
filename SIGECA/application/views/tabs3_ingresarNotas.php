@@ -1,3 +1,4 @@
+<?if($largo>0):?>
 <label class="msjError">Ingresar nota sin punto ni coma, Ejemplo: 65</label>
 <table class="ui-widget-content ui-corner-all" id="tabla1">
     <tr>
@@ -15,7 +16,7 @@
         <th>Promedios</th>
     </tr>
     
-    <?$i=1;foreach($alumnos as $row):?>
+    <?$j=1;$l=1;$i=1;foreach($alumnos as $row):?>
     <tr>
         <td><label><?=$i;?><input id="idalumno<?=$i;?>" type="hidden" value="<?=$row->IDALUMNO;?>" /></label></td>
         <td><label><?=$row->APELLIDOP;?></label></td>
@@ -28,9 +29,25 @@
                         <?foreach(${"nota".$i.$k} as $row2):?>
                             <?if($row2->BLOQUEO =='si'):?>
                                 <?if($row2->NOTAS < 40):?>
-                                    <input value="<?=$row2->NOTAS;?>" disabled class="ui-corner-all bloqueo rojo" type="text" size="3" tabindex="<?=$j;?>"/>
+                                    <?if($concepto>0):?>
+                                        <input value="I" disabled class="ui-corner-all bloqueo rojo" type="text" size="3" tabindex="<?=$j;?>"/>
+                                    <?else:?>
+                                        <input value="<?=$row2->NOTAS;?>" disabled class="ui-corner-all bloqueo rojo" type="text" size="3" tabindex="<?=$j;?>"/>
+                                    <?endif;?>
                                 <?else:?>
-                                    <input value="<?=$row2->NOTAS;?>" disabled class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                    <?if($concepto>0):?>
+                                        <?if($row2->NOTAS>=40 && $row2->NOTAS<=50):?>
+                                            <input value="S" disabled class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                        <?endif;?>
+                                        <?if($row2->NOTAS>=51 && $row2->NOTAS<=60):?>
+                                            <input value="B" disabled class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                        <?endif;?>
+                                        <?if($row2->NOTAS>=61 && $row2->NOTAS<=70):?>
+                                            <input value="MB" disabled class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                        <?endif;?>
+                                    <?else:?>
+                                        <input value="<?=$row2->NOTAS;?>" disabled class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                    <?endif;?>
                                 <?endif;?>
                             <?else:?>
                                 <?if($row2->NOTAS < 40):?>
@@ -53,9 +70,25 @@
                         <?foreach(${"nota".$i.$k} as $row2):?>
                             <?if($row2->BLOQUEO =='si'):?>
                                 <?if($row2->NOTAS < 40):?>
-                                    <input value="<?=$row2->NOTAS;?>" disabled id="<?=$j;?>" class="ui-corner-all bloqueo rojo" type="text" size="3" tabindex="<?=$j;?>"/>
+                                    <?if($concepto>0):?>
+                                        <input value="I" disabled class="ui-corner-all bloqueo rojo" type="text" size="3" tabindex="<?=$j;?>"/>
+                                    <?else:?>
+                                        <input value="<?=$row2->NOTAS;?>" disabled id="<?=$j;?>" class="ui-corner-all bloqueo rojo" type="text" size="3" tabindex="<?=$j;?>"/>
+                                    <?endif;?>
                                 <?else:?>
-                                    <input value="<?=$row2->NOTAS;?>" disabled id="<?=$j;?>" class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                    <?if($concepto>0):?>
+                                        <?if($row2->NOTAS>=40 && $row2->NOTAS<=50):?>
+                                            <input value="S" disabled class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                        <?endif;?>
+                                        <?if($row2->NOTAS>=51 && $row2->NOTAS<=60):?>
+                                            <input value="B" disabled class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                        <?endif;?>
+                                        <?if($row2->NOTAS>=61 && $row2->NOTAS<=70):?>
+                                            <input value="MB" disabled class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                        <?endif;?>
+                                    <?else:?>
+                                        <input value="<?=$row2->NOTAS;?>" disabled id="<?=$j;?>" class="ui-corner-all bloqueo azul" type="text" size="3" tabindex="<?=$j;?>"/>
+                                    <?endif;?>
                                 <?endif;?>
                             <?else:?>
                                 <?if($row2->NOTAS < 40):?>
@@ -103,7 +136,9 @@
 <div style="padding-top: 10px;">
     <button id="guardarNotas">Guardar Notas</button>
 </div>
-
+<?else:?>
+<label class="msjError">Asignatura sin alumnos ingresados</label>
+<?endif;?>
 <script>
     tb = $('input');
     

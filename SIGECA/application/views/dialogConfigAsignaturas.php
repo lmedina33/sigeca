@@ -123,7 +123,10 @@
 
         var myarray=new Array(3)
         myarray[0] = "Nota Parcial"
-        myarray[1] = "C/2"
+        if(parseInt($("#ordenCurso").val()) > 7)
+            myarray[1] = "Síntesis"
+        else
+            myarray[1] = "C/2"
         myarray[2] = "Complementaria"
  
         var tipo = fila.insertCell(1);

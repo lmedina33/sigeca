@@ -206,7 +206,7 @@ class sigeca extends CI_Controller {
         $idcurso = $this->input->post('curso');
         $idprofesor = $this->session->userdata('username');
         $ano = DATE('Y');
-        
+        $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
         $datos['nombreCurso'] = $this->modelo->buscaDatosCursoPorID($idcurso)->result();
         $profesorGuia = $this->modelo->buscaProfesorGuia($ano,$idcurso)->result();
         $datos['profesorGuiaCant'] = $this->modelo->buscaProfesorGuia($ano,$idcurso)->num_rows();
@@ -219,7 +219,7 @@ class sigeca extends CI_Controller {
         foreach($asignaturas as $row):
             $datos['asignatura'.$i] = $this->modelo->buscaDatosAsignaturaPorID($row->IDASIGNATURA)->result();
             $datos['configurada'.$i] = 'no';
-            $configurada = $this->modelo->buscaDatosCalificacion($row->IDASIGNATURA,$ano);
+            $configurada = $this->modelo->buscaDatosCalificacion($row->IDASIGNATURA,$ano,$semestre);
             if($configurada->num_rows() > 0):
                 $datos['configurada'.$i] = 'si';
             endif;
@@ -695,6 +695,7 @@ class sigeca extends CI_Controller {
         $datos['nombreCurso'] = $this->modelo->buscaDatosCursoPorID($idcurso)->result();
         $profesorCursoAsignatura = $this->modelo->buscaprofesorCursoAsignatura($ano,$idcurso)->result();
         $i=0;
+        $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
         foreach($profesorCursoAsignatura as $row):
             $datos['profesorAsignadoCant'.$i] = '0';
             if($row->IDPROFESOR!='11111111'){
@@ -703,7 +704,7 @@ class sigeca extends CI_Controller {
             }
             $datos['asignaturasAsignadas'.$i] = $this->modelo->buscaDatosAsignaturaPorID($row->IDASIGNATURA)->result();
             $datos['configurada'.$i] = 'no';
-            $configurada = $this->modelo->buscaDatosCalificacion($row->IDASIGNATURA,$ano);
+            $configurada = $this->modelo->buscaDatosCalificacion($row->IDASIGNATURA,$ano,$semestre);
             if($configurada->num_rows() > 0):
                 $datos['configurada'.$i] = 'si';
             endif;
@@ -737,6 +738,10 @@ class sigeca extends CI_Controller {
         $idprofesor = $this->session->userdata('username');
         $idasignatura = $this->input->post('asignatura');
         $electivo = $this->modelo->buscaAsignaturaElectiva($idasignatura)->num_rows();
+        $concepto = $this->modelo->buscaAsignaturaConcepto($idasignatura)->num_rows();
+        $fecha1 = DATE('d-M-Y');
+        $fecha1 = strtotime($this->convierteFecha2($fecha1));
+        $semestre = $this->semestre($fecha1);
         
         if($electivo > 0):
             $alumnos = $this->modelo->cargaListadoAlumnosConElectivo2($ano,$idcurso,$idasignatura);
@@ -746,13 +751,12 @@ class sigeca extends CI_Controller {
         
         $datos['largo'] = $alumnos->num_rows();
         $datos['alumnos'] = $alumnos->result();
-        $datos['datosCalificacion'] = $this->modelo->buscaDatosCalificacion($idasignatura,$ano)->result();
+        $datos['datosCalificacion'] = $this->modelo->buscaDatosCalificacion($idasignatura,$ano,$semestre)->result();
         
         $i=1;
         foreach ($alumnos->result() as $row1):
             $j=0;
             foreach($datos['datosCalificacion'] as $row):
-                $semestre=$this->semestre(strtotime(DATE('d-m-Y')));
                 $notas = $this->modelo->buscaNota($row1->IDALUMNO,$ano,$idasignatura,$row->IDCALIFICACION,$semestre);
                 if($notas->num_rows() > 0):
                     $datos['cantNota'.$i.$j] = '1';
@@ -765,9 +769,7 @@ class sigeca extends CI_Controller {
             endforeach;
             $i++;
         endforeach;
- 
-        $fecha1 = DATE('d-M-Y');
-        $fecha1 = strtotime($this->convierteFecha2($fecha1));
+        
         $i=0;
         foreach ($datos['datosCalificacion'] as $row):
             $fecha_entrada = strtotime($this->convierteFecha2($row->FECHA));
@@ -788,13 +790,12 @@ class sigeca extends CI_Controller {
         $promedio[$j] = 0;
         $verPonde = 'si';
         foreach($datos['alumnos'] as $row):
-            $semestre=$this->semestre(strtotime(DATE('d-m-Y')));
             $notas = $this->modelo->buscaNota2($row->IDALUMNO,$ano,$idasignatura,$semestre);
             $cantNotas = $notas->num_rows();
             $notas = $notas->result();
             $i=0;
             $suma=0;
-            if($orden<6){
+            if($orden<8){
                 $cantC2 = $this->modelo->buscaCalifC2($ano,$idasignatura,"C/2",$row->IDALUMNO,$semestre);
                 $cantNotas = $cantNotas + $cantC2->num_rows();
                 $verPonde='no';
@@ -811,9 +812,16 @@ class sigeca extends CI_Controller {
             else{
                 foreach($notas as $row1):
                     $ponderaciones = $this->modelo->buscaPonderacionNotas($ano,$idasignatura,$row1->IDCALIFICACION,$semestre);
-                    foreach($ponderaciones as $row2):
-                        $ponderacion[$i] = $row2->PONDERACION;
-                        $suma = $suma + $row2->PONDERACION;
+                    foreach($ponderaciones->result() as $row2):
+                        if($electivo >0)
+                        {
+                            $ponderacion[$i] = 100/$cantNotas;
+                        }
+                        else
+                        {
+                            $ponderacion[$i] = $row2->PONDERACION;                    
+                            $suma = $suma + $row2->PONDERACION;    
+                        }
                     endforeach;
                     $nota[$i] = $row1->NOTAS;
                     $i++;
@@ -827,8 +835,21 @@ class sigeca extends CI_Controller {
                 $datos['promedio'.$j] = round($promedio/($suma/100));
             else
                 $datos['promedio'.$j] = round($promedio);
+            if($concepto>0) //Es una asignatura con concepto
+            {
+                $notac = $datos['promedio'.$j];
+                if($notac >= 10 && $notac<=39)
+                    $datos['promedio'.$j] = 'I';
+                if($notac >= 40 && $notac<=50)
+                    $datos['promedio'.$j] = 'S';
+                if($notac >= 51 && $notac<=60)
+                    $datos['promedio'.$j] = 'B';
+                if($notac >= 61 && $notac<=70)
+                    $datos['promedio'.$j] = 'MB';
+            }
             $j++;
         endforeach;
+        $datos['concepto']=$concepto;
         $datos['verPonde'] = $verPonde;
         $this->load->view('tabs3_ingresarNotas',$datos);
     }
@@ -856,11 +877,12 @@ class sigeca extends CI_Controller {
         $ordenCurso = $this->input->post('ordenCurso');
         $nombreAsignatura = $this->input->post('nombreAsignatura');
         $idAsignatura = $this->input->post('idAsignatura');
+        $electivo = $this->modelo->buscaAsignaturaElectiva($idAsignatura)->num_rows();
         $ano = DATE('Y');
         $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
         $fechaCalificacion = $this->modelo->buscaFechaCalificacion2($ano,$idAsignatura,$semestre);
         $datos['ponderacion'] = 'si'; //7º en adelante es con Ponderaciones
-        if($ordenCurso<8) //Desde 6º básico hacia atrás no tiene ponderaciones!
+        if($ordenCurso<8 || $electivo>0) //Desde 6º básico hacia atrás no tiene ponderaciones!
             $datos['ponderacion'] = 'no';
         
         $fecha1 = DATE('d-M-Y');
@@ -870,7 +892,7 @@ class sigeca extends CI_Controller {
             $datos['evaluaciones']=$fechaCalificacion->result();
             foreach($datos['evaluaciones'] as $row):
                 $fecha_entrada = strtotime($this->convierteFecha2($row->FECHA));
-                $calificaciones = $this->modelo->buscaNota3($ano,$idAsignatura,$row->IDCALIFICACION)->num_rows();
+                $calificaciones = $this->modelo->buscaNota3($ano,$idAsignatura,$row->IDCALIFICACION,$semestre)->num_rows();
                 $datos['bloqueo'.$i] = 'no';
                 if($fecha1 > $fecha_entrada || $calificaciones > 0)
                     $datos['bloqueo'.$i] = 'si';
@@ -908,7 +930,7 @@ class sigeca extends CI_Controller {
         $fecha2 = $fecha;
         $fecha = strtotime($fecha);
         $semestre = $this->semestre($fecha);
-        $calificaciones = $this->modelo->buscaNota3($ano,$idasignatura,$idcalificacion )->num_rows();
+        $calificaciones = $this->modelo->buscaNota3($ano,$idasignatura,$idcalificacion,$semestre)->num_rows();
         //La nueva fecha debe ser mayor 0 igual a la fecha de hoy y la evaluación no ha sido registrada! (tabla calificaciones)
         if($fecha1<=$fecha && $calificaciones == 0)
         {
@@ -921,8 +943,7 @@ class sigeca extends CI_Controller {
         $idEvaluacion = $this->input->post('idEvaluacion');
         $idAsignatura = $this->input->post('idAsignatura');
         $ano = DATE('Y');
-        $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
-        $this->modelo->eliminaConfigCalificacion($idEvaluacion,$idAsignatura,$ano,$semestre);
+        $this->modelo->eliminaConfigCalificacion($idEvaluacion,$idAsignatura,$ano);
     }
     function semestre($fecha)
     {
@@ -1001,10 +1022,8 @@ class sigeca extends CI_Controller {
     {
         $curso = $this->input->post('curso');
         $ano = DATE('Y');
-        
         $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
         $asignaturas = $this->modelo->buscaAsignaturasPorCursoAno($ano,$curso,$semestre)->result();
-        
         $i=0;
         foreach($asignaturas as $row):
             $datos['asignatura'.$i] = $this->modelo->buscaDatosAsignaturaPorID($row->IDASIGNATURA)->result();
@@ -1012,16 +1031,30 @@ class sigeca extends CI_Controller {
         endforeach;
         $datos['cantAsignaturas'] = $i;
         
-        $datos['alumnos'] = $this->modelo->cargaListadoAlumnos($ano,$curso)->result();
-        
         $this->load->view('divModificarCalificacion',$datos);
+    }
+    function cargaAlumnosAsignatura()
+    {
+        $asignatura = $this->input->post('asignatura');
+        $curso = $this->input->post('curso');
+        $ano = DATE('Y');
+        $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
+        $asignatura = $this->modelo->buscaDatosAsignaturaPorID($asignatura)->result();
+        
+        foreach($asignatura as $row):
+            if($row->TIPOASIGNATURA == 1)
+                $datos['alumnos'] = $this->modelo->cargaListadoAlumnosConElectivo2($ano,$curso,$row->IDASIGNATURA)->result();
+            else
+                $datos['alumnos'] = $this->modelo->cargaListadoAlumnos($ano,$curso)->result();
+        endforeach;
+        $this->load->view('seleccionAlumno',$datos);
     }
     function cargaFechasCalificacion()
     {
         $idasignatura = $this->input->post('idasignatura');
         $idcurso = $this->input->post('idcurso');
         $ano = DATE('Y');
-        $semestre=$this->semestre(strtotime(DATE('d-m-Y')));
+        $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
         $datos['fechas'] = $this->modelo->cargaFechasCalificacion($ano,$idasignatura,$idcurso,$semestre)->result();
         $this->load->view('cargarFechasModifCalif',$datos);
     }
@@ -1032,17 +1065,17 @@ class sigeca extends CI_Controller {
         $idalumno = str_replace(" ","",$this->input->post('idalumno'));
         $fecha = $this->input->post('fecha');
         $ano = DATE('Y');
+        $semestre = $this->semestre(strtotime(DATE('d-m-Y')));
         if($idalumno == "Todos")
         {
             $alumnos = $this->modelo->cargaListadoAlumnos($ano,$idcurso)->result();
-            $semestre=$this->semestre(strtotime($fecha));
             foreach($alumnos as $row):
                 $this->modelo->modificacionCalificacion($ano,$idasignatura,$row->IDALUMNO,$idcurso,$fecha,$semestre);
             endforeach;
         }
         else
         {
-            $this->modelo->modificacionCalificacion($ano,$idasignatura,$idalumno,$idcurso,$fecha);
+            $this->modelo->modificacionCalificacion($ano,$idasignatura,$idalumno,$idcurso,$fecha,$semestre);
         }
     }
     function tabs_Curso()
