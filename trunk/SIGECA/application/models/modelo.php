@@ -457,11 +457,12 @@ class modelo extends CI_Model
         $this->db->where('IDALUMNO',$idalumno);
         return $this->db->get('ALUMNOS');
     }
-    function buscaDatosCalificacion($idasignatura,$ano)
+    function buscaDatosCalificacion($idasignatura,$ano,$semestre)
     {
         $this->db->select('*');
         $this->db->where('ANOACADEMICO',$ano);
         $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('SEMESTRE',$semestre);
         return $this->db->get('FECHACALIFICACION');
     }
     function cargaListadoAlumnos($ano,$idcurso)
@@ -529,7 +530,7 @@ class modelo extends CI_Model
         $this->db->where('IDASIGNATURA',$idasignatura);
         $this->db->where('IDCALIFICACION',$IDCALIFICACION);
         $this->db->where('SEMESTRE',$semestre);
-        return $this->db->get('FECHACALIFICACION')->result();
+        return $this->db->get('FECHACALIFICACION');
     }
     function almacenarCalificaciones($idAlumno,$ano,$idAsignatura,$idCalif,$fecha,$calif,$idCurso,$tipo,$semestre)
     {
@@ -884,6 +885,13 @@ class modelo extends CI_Model
         $this->db->select('*');
         $this->db->where('IDASIGNATURA',$idasignatura);
         $this->db->where('TIPOASIGNATURA',1);
+        return $this->db->get('ASIGNATURA');
+    }
+    function buscaAsignaturaConcepto($idasignatura)
+    {
+        $this->db->select('*');
+        $this->db->where('IDASIGNATURA',$idasignatura);
+        $this->db->where('TIPOEVALUACION',1);
         return $this->db->get('ASIGNATURA');
     }
 }
