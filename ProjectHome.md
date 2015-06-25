@@ -1,0 +1,1 @@
+Sistema de gestión escolar que permite el registro de evaluaciones y generación de informes, así como también de estadísticos históricos.
